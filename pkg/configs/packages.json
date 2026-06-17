@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Neovim",
+    "repo": "https://github.com/example/nvim.git",
+    "source": "config",
+    "target": "~/.config/nvim"
+  },
+  {
+    "name": "Hyprland",
+    "repo": "https://github.com/example/hypr.git",
+    "source": "hypr",
+    "target": "~/.config/hypr"
+  },
+  {
+    "name": "Waybar",
+    "repo": "https://github.com/example/waybar.git",
+    "source": "config",
+    "target": "~/.config/waybar"
+  },
+  {
+    "name": "Foot",
+    "repo": "https://github.com/example/foot.git",
+    "source": "config",
+    "target": "~/.config/foot"
+  },
+  {
+    "name": "Fastfetch",
+    "repo": "https://github.com/example/fastfetch.git",
+    "source": "config",
+    "target": "~/.config/fastfetch"
+  },
+  {
+    "name": "Zsh",
+    "repo": "https://github.com/example/zsh.git",
+    "source": "config",
+    "target": "~/.config/zsh"
+  }
+]
