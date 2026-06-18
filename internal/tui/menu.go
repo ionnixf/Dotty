@@ -19,7 +19,7 @@ type menuScreen struct {
 }
 
 func newMenuScreen(d *deps) *menuScreen {
-	l := newList("Dotty", *d.theme)
+	l := newList("Dotty", d.theme)
 	items := []listItem{
 		menuItem{"Install", screenInstall},
 		menuItem{"Update", screenUpdate},

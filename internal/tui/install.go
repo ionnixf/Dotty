@@ -38,7 +38,7 @@ type installScreen struct {
 
 func newInstallScreen(d *deps) *installScreen {
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
-	l := newList("Install", *d.theme)
+	l := newList("Install", d.theme)
 	return &installScreen{deps: d, list: l, sp: sp}
 }
 

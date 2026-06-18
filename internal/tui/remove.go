@@ -37,7 +37,7 @@ type removeScreen struct {
 
 func newRemoveScreen(d *deps) *removeScreen {
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
-	l := newList("Remove", *d.theme)
+	l := newList("Remove", d.theme)
 	return &removeScreen{deps: d, list: l, sp: sp}
 }
 

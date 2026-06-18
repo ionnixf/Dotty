@@ -15,17 +15,21 @@ type listItem interface {
 // items, and rendering with the theme's cursor glyph. We deliberately do not
 // use bubbles/list: its filter/pagination/keybindings fight the navigational
 // style this app needs, and a 60-line widget is simpler than fighting it.
+//
+// theme is a pointer so a live theme change (e.g. toggling dark/light in the
+// Settings screen) is reflected by every list on its next render without
+// rebuilding the widgets.
 type list struct {
 	title  string
 	items  []listItem
 	cursor int
-	theme  Theme
+	theme  *Theme
 	width  int
 	help   string // shown in the footer when non-empty
 }
 
 // newList builds a list with a title and theme. Items are set via setItems.
-func newList(title string, theme Theme) *list {
+func newList(title string, theme *Theme) *list {
 	return &list{title: title, theme: theme, cursor: 0}
 }
 

@@ -33,6 +33,37 @@ type deps struct {
 	theme    *Theme
 }
 
+// NewDeps wires the real domain services into a deps bag for the TUI. It is
+// the single place that constructs the store, git client, and the
+// installer/updater/remover/syncer services, so main stays trivial and there
+// are no globals. settingsPath/configDir/home are accepted explicitly so they
+// can be varied in tests later.
+func NewDeps(paths config.Paths, home, userConfigDir string) (*deps, error) {
+	settings, err := config.LoadSettings(paths)
+	if err != nil {
+		return nil, err
+	}
+	settings.Theme = config.NormaliseTheme(settings.Theme)
+	theme := NewTheme(settings.Theme)
+
+	store := storage.New(paths.InstalledFile())
+	gc := git.New()
+
+	return &deps{
+		paths:     paths,
+		home:      home,
+		configDir: userConfigDir,
+		store:     store,
+		git:       gc,
+		installer: installer.New(gc, store, paths, home),
+		updater:   updater.New(gc, store, paths),
+		remover:   remover.New(store, paths, home),
+		syncer:    syncer.New(store, paths, home, gc),
+		settings:  &settings,
+		theme:     &theme,
+	}, nil
+}
+
 // reloadCatalog returns the effective package catalog, honouring the user's
 // optional override file. Errors propagate to the caller for display.
 func (d *deps) reloadCatalog() ([]catalog.Package, error) {

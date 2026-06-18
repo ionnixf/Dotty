@@ -38,7 +38,7 @@ type updateScreen struct {
 
 func newUpdateScreen(d *deps) *updateScreen {
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
-	l := newList("Update", *d.theme)
+	l := newList("Update", d.theme)
 	return &updateScreen{deps: d, list: l, sp: sp}
 }
 
