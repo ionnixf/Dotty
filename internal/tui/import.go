@@ -66,12 +66,23 @@ func (s *importScreen) help() string {
 	return "↑↓ navigate · enter import · r re-scan · esc back"
 }
 
-// enter triggers a scan each time the screen becomes active.
+// enter triggers a scan each time the screen becomes active. It only sets up
+// state; the command that actually runs the scan is returned by Init, which
+// the app dispatches via switchTo. Returning the command from enter() would
+// not work because the screen interface's enter() has no return value.
 func (s *importScreen) enter() {
 	s.startScan()
 }
 
-func (s *importScreen) Init() tea.Cmd { return nil }
+// Init kicks off the scan scheduled by enter() and starts the spinner. This
+// is what makes the Import screen actually progress instead of hanging on
+// "Scanning ~/.config ..." forever.
+func (s *importScreen) Init() tea.Cmd {
+	if s.state == importIdle {
+		return nil
+	}
+	return tea.Batch(s.sp.Tick, s.runScan())
+}
 
 func (s *importScreen) startScan() {
 	s.state = importScanning
@@ -112,10 +123,14 @@ func (s *importScreen) load() error {
 func (s *importScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Block navigation while work is in flight.
+		// ESC/q always leaves the screen, even mid-scan. A late
+		// importScannedMsg arriving afterwards is simply ignored by the
+		// then-active screen, so there is no harm in leaving early.
 		if s.state == importScanning || s.state == importing {
 			if keyID(msg) == "esc" || keyID(msg) == "q" {
-				return s, nil
+				s.state = importIdle
+				s.status = ""
+				return s, back()
 			}
 			return s, nil
 		}

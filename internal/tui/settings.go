@@ -59,10 +59,21 @@ func (s *settingsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			s.err = msg.err
 			s.status = ""
-		} else {
-			s.err = nil
-			s.status = "Saved."
+			return s, nil
 		}
+		// Apply the persisted settings to the shared deps on the main
+		// goroutine. This is the only place shared state is written, so there
+		// is no race with View. Rebuilding the theme here also means every
+		// screen (which holds the same *Theme pointer) picks up the new look
+		// on its next render — no restart required.
+		if s.deps.settings != nil {
+			*s.deps.settings = msg.saved
+		}
+		if s.deps.theme != nil && msg.saved.Theme != s.deps.theme.Name {
+			*s.deps.theme = NewTheme(msg.saved.Theme)
+		}
+		s.err = nil
+		s.status = "Saved."
 		return s, nil
 	case tea.KeyMsg:
 		switch keyID(msg) {
@@ -115,24 +126,17 @@ func (s *settingsScreen) adjust(row int) {
 	}
 }
 
-// save writes settings to disk and propagates the change to deps so every
-// screen sees the new values (notably the theme, which is rebuilt).
+// save persists the edited settings to disk. It deliberately does NOT mutate
+// the shared deps: a tea.Cmd runs on a background goroutine, while View reads
+// deps.theme on the main goroutine, so writing shared state here would race
+// and cause partial theme updates. Instead we return the saved settings in
+// the message and apply them to deps in Update, which is single-threaded.
 func (s *settingsScreen) save() tea.Cmd {
 	settings := s.local
 	paths := s.deps.paths
-	d := s.deps
 	return func() tea.Msg {
 		if err := config.SaveSettings(paths, settings); err != nil {
 			return settingsSavedMsg{err: err}
-		}
-		// Propagate to the shared deps pointer.
-		if d.settings != nil {
-			*d.settings = settings
-		}
-		// Rebuild the theme if it changed.
-		newTheme := NewTheme(settings.Theme)
-		if d.theme != nil {
-			*d.theme = newTheme
 		}
 		return settingsSavedMsg{saved: settings}
 	}

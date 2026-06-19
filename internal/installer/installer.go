@@ -92,7 +92,9 @@ func (i *Installer) Install(req Request) (Result, error) {
 
 // ensureRepo clones repo into repoDir if it is not already a git repo.
 // If the directory exists but is not a repo, it is an unexpected state and
-// we refuse rather than guess.
+// we refuse rather than guess. On clone failure any partially-created repoDir
+// is removed so a retry is not permanently blocked by an empty directory git
+// may have left behind.
 func (i *Installer) ensureRepo(repo, repoDir string) error {
 	isRepo, err := i.git.IsRepo(repoDir)
 	if err != nil {
@@ -107,9 +109,26 @@ func (i *Installer) ensureRepo(repo, repoDir string) error {
 		return fmt.Errorf("repo directory %s exists but is not a git repository", repoDir)
 	}
 	if _, err := i.git.Clone(repo, repoDir); err != nil {
+		// git may create repoDir before failing (e.g. a non-existent remote).
+		// Clean up an empty leftover so the next attempt can clone cleanly;
+		// only remove it if it is still empty to stay strictly non-destructive.
+		removeIfEmpty(repoDir)
 		return err
 	}
 	return nil
+}
+
+// removeIfEmpty deletes dir only when it contains no entries, so we never
+// erase anything git or the user placed there.
+func removeIfEmpty(dir string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	if len(entries) != 0 {
+		return
+	}
+	_ = os.Remove(dir)
 }
 
 // link creates a symlink source -> target (i.e. target points to source).

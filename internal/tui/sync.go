@@ -53,7 +53,16 @@ func (s *syncScreen) enter() {
 	s.startCheck()
 }
 
-func (s *syncScreen) Init() tea.Cmd { return nil }
+// Init kicks off the check scheduled by enter() and starts the spinner.
+// Without this the Sync screen would set its state to syncChecking and hang
+// on "Checking installed packages ..." forever, because enter() cannot return
+// a command (the screen interface gives it no return value).
+func (s *syncScreen) Init() tea.Cmd {
+	if s.state == syncIdle {
+		return nil
+	}
+	return tea.Batch(s.sp.Tick, s.runCheck())
+}
 
 func (s *syncScreen) startCheck() {
 	s.state = syncChecking
@@ -65,11 +74,15 @@ func (s *syncScreen) startCheck() {
 func (s *syncScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Ignore most keys while an async op is running.
+		// ESC/q always leaves the screen, even mid-check/repair. Any late
+		// syncCheckedMsg / syncRepairedMsg is ignored by the then-active
+		// screen, so leaving early is safe.
 		if s.state == syncChecking || s.state == syncRepairing {
 			switch keyID(msg) {
 			case "esc", "q":
-				return s, nil
+				s.state = syncIdle
+				s.status = ""
+				return s, back()
 			}
 			return s, nil
 		}
