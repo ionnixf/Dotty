@@ -10,6 +10,7 @@ import (
 
 	"github.com/ion/dotty/internal/config"
 	"github.com/ion/dotty/internal/git"
+	"github.com/ion/dotty/internal/installer"
 	"github.com/ion/dotty/internal/storage"
 )
 
@@ -119,7 +120,7 @@ func (s *Syncer) Repair(rec storage.Record) error {
 	if err != nil {
 		return fmt.Errorf("expand target %q: %w", rec.Target, err)
 	}
-	source := filepath.Join(s.paths.RepoDir, rec.Name, rec.Source)
+	source := installer.LinkSource(filepath.Join(s.paths.RepoDir, rec.Name), rec.Source)
 	if _, err := os.Stat(source); err != nil {
 		return fmt.Errorf("source missing, cannot repair: %w", err)
 	}

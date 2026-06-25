@@ -51,9 +51,16 @@ type Result struct {
 
 // Install clones (or reuses) the repo and creates the symlink from
 // repoDir/Source to Target. On success the package is recorded.
+//
+// An empty Source links the whole repository root to Target ("target -> repo
+// contents"), which is the common case for dotfiles repos that keep their
+// config at the root. A non-empty Source links only that subdirectory.
 func (i *Installer) Install(req Request) (Result, error) {
 	if req.Name == "" {
 		return Result{}, errors.New("empty package name")
+	}
+	if req.Repo == "" {
+		return Result{}, errors.New("empty repo URL")
 	}
 
 	repoDir := filepath.Join(i.paths.RepoDir, req.Name)
@@ -66,7 +73,7 @@ func (i *Installer) Install(req Request) (Result, error) {
 		return Result{}, err
 	}
 
-	source := filepath.Join(repoDir, req.Source)
+	source := LinkSource(repoDir, req.Source)
 	if err := i.link(source, target); err != nil {
 		return Result{}, err
 	}
@@ -88,6 +95,18 @@ func (i *Installer) Install(req Request) (Result, error) {
 		Target:  target,
 		RepoDir: repoDir,
 	}, nil
+}
+
+// LinkSource returns the absolute path within repoDir that should be linked
+// to the target. An empty source means "the repository root" — the common
+// case for dotfiles repos that keep their config at the root. This is the
+// single source of truth for that convention; the syncer reuses it so install
+// and repair always agree on what gets linked.
+func LinkSource(repoDir, source string) string {
+	if source == "" {
+		return repoDir
+	}
+	return filepath.Join(repoDir, source)
 }
 
 // ensureRepo clones repo into repoDir if it is not already a git repo.
@@ -131,16 +150,23 @@ func removeIfEmpty(dir string) {
 	_ = os.Remove(dir)
 }
 
-// link creates a symlink source -> target (i.e. target points to source).
+// link creates a symlink at target pointing to source (target -> source).
 // If target is already a symlink it is replaced (idempotent re-install). If
-// target is any other existing filesystem entry, ErrTargetExists is returned.
+// target is any other existing filesystem entry, ErrTargetExists is returned
+// so the caller can prompt the user instead of destroying data.
 func (i *Installer) link(source, target string) error {
-	if _, err := os.Stat(source); err != nil {
-		return fmt.Errorf("source %s missing in repo: %w", source, err)
+	info, err := os.Stat(source)
+	if err != nil {
+		return fmt.Errorf("link source %s missing in repo: %w", source, err)
+	}
+	if !info.IsDir() {
+		// Dotty links directories. A file source means the catalog is wrong;
+		// fail explicitly rather than linking a single file to a config path.
+		return fmt.Errorf("link source %s is not a directory", source)
 	}
 
-	if info, err := os.Lstat(target); err == nil {
-		if info.Mode()&os.ModeSymlink != 0 {
+	if existing, err := os.Lstat(target); err == nil {
+		if existing.Mode()&os.ModeSymlink != 0 {
 			// Existing symlink: safe to replace.
 			if err := os.Remove(target); err != nil {
 				return fmt.Errorf("remove existing symlink %s: %w", target, err)

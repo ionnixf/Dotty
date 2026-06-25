@@ -1,38 +1,38 @@
 [
   {
-    "name": "Neovim",
-    "repo": "https://github.com/example/nvim.git",
-    "source": "config",
-    "target": "~/.config/nvim"
+    "name": "neovim",
+    "repo": "https://github.com/example/neovim-dotfiles",
+    "target": "~/.config/nvim",
+    "description": "Neovim configuration"
   },
   {
-    "name": "Hyprland",
-    "repo": "https://github.com/example/hypr.git",
-    "source": "hypr",
-    "target": "~/.config/hypr"
+    "name": "hyprland",
+    "repo": "https://github.com/example/hyprland-dotfiles",
+    "target": "~/.config/hypr",
+    "description": "Hyprland compositor configuration"
   },
   {
-    "name": "Waybar",
-    "repo": "https://github.com/example/waybar.git",
-    "source": "config",
-    "target": "~/.config/waybar"
+    "name": "waybar",
+    "repo": "https://github.com/example/waybar-dotfiles",
+    "target": "~/.config/waybar",
+    "description": "Waybar status bar configuration"
   },
   {
-    "name": "Foot",
-    "repo": "https://github.com/example/foot.git",
-    "source": "config",
-    "target": "~/.config/foot"
+    "name": "foot",
+    "repo": "https://github.com/example/foot-dotfiles",
+    "target": "~/.config/foot",
+    "description": "Foot terminal emulator configuration"
   },
   {
-    "name": "Fastfetch",
-    "repo": "https://github.com/example/fastfetch.git",
-    "source": "config",
-    "target": "~/.config/fastfetch"
+    "name": "fastfetch",
+    "repo": "https://github.com/example/fastfetch-dotfiles",
+    "target": "~/.config/fastfetch",
+    "description": "Fastfetch system info configuration"
   },
   {
-    "name": "Zsh",
-    "repo": "https://github.com/example/zsh.git",
-    "source": "config",
-    "target": "~/.config/zsh"
+    "name": "zsh",
+    "repo": "https://github.com/example/zsh-dotfiles",
+    "target": "~/.config/zsh",
+    "description": "Zsh shell configuration"
   }
 ]

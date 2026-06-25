@@ -1,11 +1,16 @@
 package tui
 
 import (
+	"errors"
+	"fmt"
+	iofs "io/fs"
+
 	"github.com/ion/dotty/internal/catalog"
 	"github.com/ion/dotty/internal/config"
 	"github.com/ion/dotty/internal/git"
 	"github.com/ion/dotty/internal/installer"
 	"github.com/ion/dotty/internal/remover"
+	"github.com/ion/dotty/internal/repo"
 	"github.com/ion/dotty/internal/storage"
 	"github.com/ion/dotty/internal/syncer"
 	"github.com/ion/dotty/internal/updater"
@@ -21,6 +26,7 @@ type deps struct {
 
 	store     *storage.Store
 	git       *git.Client
+	resolver  *repo.Resolver
 	installer *installer.Installer
 	updater   *updater.Updater
 	remover   *remover.Remover
@@ -49,12 +55,19 @@ func NewDeps(paths config.Paths, home, userConfigDir string) (*deps, error) {
 	store := storage.New(paths.InstalledFile())
 	gc := git.New()
 
+	manager, err := repo.NewManager(paths.RepositoriesFile())
+	if err != nil {
+		return nil, fmt.Errorf("load repositories: %w", err)
+	}
+	resolver := repo.NewResolver(manager, gc, paths)
+
 	return &deps{
 		paths:     paths,
 		home:      home,
 		configDir: userConfigDir,
 		store:     store,
 		git:       gc,
+		resolver:  resolver,
 		installer: installer.New(gc, store, paths, home),
 		updater:   updater.New(gc, store, paths),
 		remover:   remover.New(store, paths, home),
@@ -64,10 +77,23 @@ func NewDeps(paths config.Paths, home, userConfigDir string) (*deps, error) {
 	}, nil
 }
 
-// reloadCatalog returns the effective package catalog, honouring the user's
-// optional override file. Errors propagate to the caller for display.
+// reloadCatalog returns the effective package catalog.
+//
+// It prefers the resolver, which merges every registered repository (the
+// always-seeded "official" repository contributes the embedded catalog) into a
+// single view. If the user has a legacy packages.json override in the config
+// directory, that file wins outright so existing setups keep working: the
+// override was the pre-repository mechanism for customising the catalog and is
+// preserved verbatim.
 func (d *deps) reloadCatalog() ([]catalog.Package, error) {
-	return catalog.Load(d.paths.CatalogOverride())
+	if override := d.paths.CatalogOverride(); override != "" {
+		if pkgs, err := catalog.Load(override); err == nil {
+			return pkgs, nil
+		} else if !errors.Is(err, iofs.ErrNotExist) {
+			return nil, err
+		}
+	}
+	return d.resolver.All()
 }
 
 // installedRecords returns the current installed-package database.

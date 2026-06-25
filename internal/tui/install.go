@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/ion/dotty/internal/catalog"
@@ -22,7 +23,12 @@ func (i installItem) Render() string {
 	if i.installed {
 		mark = "✓ "
 	}
-	return fmt.Sprintf("%s%s", mark, i.pkg.Name)
+	name := i.pkg.Name
+	if i.pkg.Description != "" {
+		// Keep the row compact: name, then the description dimmed.
+		return fmt.Sprintf("%s%-14s %s", mark, name, i.pkg.Description)
+	}
+	return fmt.Sprintf("%s%s", mark, name)
 }
 
 // installScreen lists installable packages and runs installs.
@@ -137,6 +143,15 @@ func (s *installScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
+// friendlyInstallError turns the installer's wrapped errors into a short,
+// actionable message. The raw error is preserved for unexpected cases.
+func friendlyInstallError(err error) string {
+	if errors.Is(err, installer.ErrTargetExists) {
+		return "target already exists (back it up or remove it, then retry)"
+	}
+	return err.Error()
+}
+
 // runInstall performs the actual install on a background goroutine. It must
 // not touch the model; it returns an installDoneMsg.
 func (s *installScreen) runInstall(req installer.Request) tea.Cmd {
@@ -158,7 +173,7 @@ func (s *installScreen) View() string {
 		body += "\n\n" + s.deps.theme.Success.Render(s.status)
 	}
 	if s.err != nil {
-		body += "\n\n" + s.deps.theme.Danger.Render("Error: "+s.err.Error())
+		body += "\n\n" + s.deps.theme.Danger.Render("Error: "+friendlyInstallError(s.err))
 	}
 	return body
 }

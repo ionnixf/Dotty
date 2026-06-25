@@ -13,11 +13,17 @@ import (
 )
 
 // Package is one installable entry in the catalog.
+//
+// Source is optional: when empty, the whole repository root is linked to
+// Target ("target -> repo contents"). When set, only the repo/Source
+// subdirectory is linked. This lets a single catalog describe both repos that
+// keep their config at the root and repos that keep it under a subdirectory.
 type Package struct {
-	Name   string `json:"name"`
-	Repo   string `json:"repo"`
-	Source string `json:"source"`
-	Target string `json:"target"`
+	Name        string `json:"name"`
+	Repo        string `json:"repo"`
+	Source      string `json:"source,omitempty"`
+	Target      string `json:"target"`
+	Description string `json:"description,omitempty"`
 }
 
 // Load returns the effective catalog: the user override if present, otherwise
@@ -41,6 +47,11 @@ func Load(overridePath string) ([]Package, error) {
 	}
 	return sorted(pkgs), nil
 }
+
+// Parse decodes raw JSON into a validated Package slice. Exported so the
+// repository layer can parse a fetched repository's packages.json using the
+// exact same rules as the embedded catalog, without duplicating logic.
+func Parse(raw []byte) ([]Package, error) { return parse(raw) }
 
 // parse decodes raw JSON into a validated Package slice.
 func parse(raw []byte) ([]Package, error) {
@@ -69,6 +80,9 @@ func parse(raw []byte) ([]Package, error) {
 	}
 	return pkgs, nil
 }
+
+// Sorted returns pkgs sorted by name. Exported for the repository layer.
+func Sorted(pkgs []Package) []Package { return sorted(pkgs) }
 
 func sorted(pkgs []Package) []Package {
 	sort.Slice(pkgs, func(i, j int) bool { return pkgs[i].Name < pkgs[j].Name })

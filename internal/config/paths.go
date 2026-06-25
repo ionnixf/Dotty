@@ -28,6 +28,14 @@ func (p Paths) ConfigFile() string { return filepath.Join(p.ConfigDir, "config.j
 // present, takes precedence over the embedded default catalog.
 func (p Paths) CatalogOverride() string { return filepath.Join(p.ConfigDir, "packages.json") }
 
+// RepositoriesFile is the absolute path to the registry of package
+// repositories the user has added. See internal/repo.Manager.
+func (p Paths) RepositoriesFile() string { return filepath.Join(p.ConfigDir, "repositories.json") }
+
+// RepoCacheDir is the directory where remote (git) repository indexes are
+// cloned so their packages.json can be read locally.
+func (p Paths) RepoCacheDir() string { return filepath.Join(p.DataDir, "repo-cache") }
+
 // InstalledFile is the absolute path to the installed-package database.
 func (p Paths) InstalledFile() string { return filepath.Join(p.DataDir, "installed.json") }
 
@@ -61,10 +69,10 @@ func xdg(env, def, app string) string {
 	return filepath.Join(def, app)
 }
 
-// Ensure creates the configuration, data, and repo directories with mode
-// 0o755 if they do not already exist.
+// Ensure creates the configuration, data, repo, and repo-cache directories
+// with mode 0o755 if they do not already exist.
 func (p Paths) Ensure() error {
-	for _, dir := range []string{p.ConfigDir, p.DataDir, p.RepoDir} {
+	for _, dir := range []string{p.ConfigDir, p.DataDir, p.RepoDir, p.RepoCacheDir()} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("create directory %s: %w", dir, err)
 		}
