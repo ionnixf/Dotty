@@ -11,7 +11,8 @@ type palette struct {
 	Warning    lipgloss.Color // problems / confirmations
 	Danger     lipgloss.Color // remove / errors
 	Border     lipgloss.Color // panel borders
-	Background lipgloss.Color // header background
+	Background lipgloss.Color // panel and header background
+	Highlight  lipgloss.Color // selected row background
 }
 
 var palettes = map[string]palette{
@@ -23,7 +24,8 @@ var palettes = map[string]palette{
 		Warning:    lipgloss.Color("#fbbf24"), // amber
 		Danger:     lipgloss.Color("#f87171"), // rose
 		Border:     lipgloss.Color("#4b5563"), // dark gray border
-		Background: lipgloss.Color("#1f2937"), // dark background for header/footer
+		Background: lipgloss.Color("#1f2937"), // dark gray background
+		Highlight:  lipgloss.Color("#374151"), // slightly lighter gray
 	},
 	"light": {
 		Primary:    lipgloss.Color("#6d28d9"), // deep violet
@@ -33,7 +35,8 @@ var palettes = map[string]palette{
 		Warning:    lipgloss.Color("#d97706"), // deep amber
 		Danger:     lipgloss.Color("#dc2626"), // red
 		Border:     lipgloss.Color("#d1d5db"), // light gray border
-		Background: lipgloss.Color("#f3f4f6"), // light background for header/footer
+		Background: lipgloss.Color("#f3f4f6"), // light background
+		Highlight:  lipgloss.Color("#e5e7eb"), // slightly darker gray
 	},
 }
 
@@ -83,7 +86,6 @@ func NewTheme(name string) Theme {
 		Header: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(pal.Primary).
-			Background(pal.Background).
 			Padding(0, 2),
 		Title: lipgloss.NewStyle().
 			Bold(true).
@@ -93,7 +95,7 @@ func NewTheme(name string) Theme {
 		cursorStyle: lipgloss.NewStyle().Bold(true).Foreground(pal.Primary),
 		Panel:       panel,
 		RowHead:     lipgloss.NewStyle().Bold(true).Foreground(pal.Accent).Underline(true),
-		Selected:    lipgloss.NewStyle().Bold(true).Foreground(pal.Primary).Background(pal.Background).Padding(0, 1),
+		Selected:    lipgloss.NewStyle().Bold(true).Foreground(pal.Primary),
 		Muted:       lipgloss.NewStyle().Foreground(pal.Muted),
 		Accent:      lipgloss.NewStyle().Foreground(pal.Accent),
 		Success:     lipgloss.NewStyle().Foreground(pal.Success),
@@ -101,7 +103,6 @@ func NewTheme(name string) Theme {
 		Danger:      lipgloss.NewStyle().Foreground(pal.Danger),
 		Footer: lipgloss.NewStyle().
 			Foreground(pal.Muted).
-			Background(pal.Background).
 			Padding(0, 2),
 		Status: lipgloss.NewStyle().Foreground(pal.Muted),
 	}
