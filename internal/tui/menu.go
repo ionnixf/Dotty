@@ -41,7 +41,7 @@ func (s *menuScreen) Init() tea.Cmd { return nil }
 
 func (s *menuScreen) setSize(w, h int) {
 	s.list.setWidth(w)
-	s.list.setHeight(h - 10)
+	s.list.setHeight(h - 6)
 }
 
 func (s *menuScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

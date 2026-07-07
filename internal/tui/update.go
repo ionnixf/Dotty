@@ -53,7 +53,7 @@ func (s *updateScreen) enter() {
 
 func (s *updateScreen) setSize(w, h int) {
 	s.list.setWidth(w)
-	s.list.setHeight(h - 10)
+	s.list.setHeight(h - 6)
 }
 
 // load rebuilds the list from the installed database, prepending "Update All".

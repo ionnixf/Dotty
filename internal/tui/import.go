@@ -74,7 +74,7 @@ func (s *importScreen) enter() {
 
 func (s *importScreen) setSize(w, h int) {
 	s.list.setWidth(w)
-	s.list.setHeight(h - 10)
+	s.list.setHeight(h - 6)
 }
 
 // Init kicks off the scan scheduled by enter() and starts the spinner. This

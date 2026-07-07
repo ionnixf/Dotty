@@ -81,9 +81,9 @@ func (s *installScreen) enter() {
 
 func (s *installScreen) setSize(w, h int) {
 	s.list.setWidth(w)
-	s.list.setHeight(h - 10)
+	s.list.setHeight(h - 6)
 	s.alternativesList.setWidth(w)
-	s.alternativesList.setHeight(h - 10)
+	s.alternativesList.setHeight(h - 6)
 }
 
 // load fetches catalog + installed records and rebuilds the list items.

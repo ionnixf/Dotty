@@ -53,7 +53,7 @@ func (s *removeScreen) enter() { s.err = s.load() }
 
 func (s *removeScreen) setSize(w, h int) {
 	s.list.setWidth(w)
-	s.list.setHeight(h - 10)
+	s.list.setHeight(h - 6)
 }
 
 func (s *removeScreen) load() error {
