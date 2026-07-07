@@ -39,6 +39,11 @@ func (s *menuScreen) help() string  { return "↑↓ navigate · enter select ·
 func (s *menuScreen) enter()        {}
 func (s *menuScreen) Init() tea.Cmd { return nil }
 
+func (s *menuScreen) setSize(w, h int) {
+	s.list.setWidth(w)
+	s.list.setHeight(h - 10)
+}
+
 func (s *menuScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

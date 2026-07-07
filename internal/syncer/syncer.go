@@ -73,10 +73,22 @@ func (s *Syncer) inspect(rec storage.Record) (Problem, bool) {
 	info, err := os.Lstat(target)
 	if err != nil {
 		if os.IsNotExist(err) {
+			if rec.Repo == storage.ImportedRepoTag {
+				return Problem{Record: rec, Kind: ProblemMissingSymlink, Detail: fmt.Sprintf("directory missing: %s", target)}, true
+			}
 			return Problem{Record: rec, Kind: ProblemMissingSymlink, Detail: fmt.Sprintf("symlink missing: %s", target)}, true
 		}
 		return Problem{Record: rec, Kind: ProblemMissingSymlink, Detail: fmt.Sprintf("cannot inspect %s: %v", target, err)}, true
 	}
+
+	if rec.Repo == storage.ImportedRepoTag {
+		if !info.IsDir() {
+			return Problem{Record: rec, Kind: ProblemMissingSymlink, Detail: fmt.Sprintf("target is not a directory: %s", target)}, true
+		}
+		// Imported configs are real directories, no backing git repository checks needed.
+		return Problem{}, false
+	}
+
 	if info.Mode()&os.ModeSymlink == 0 {
 		return Problem{Record: rec, Kind: ProblemMissingSymlink, Detail: fmt.Sprintf("target is not a symlink: %s", target)}, true
 	}

@@ -51,6 +51,11 @@ func (s *updateScreen) enter() {
 	s.err = s.load()
 }
 
+func (s *updateScreen) setSize(w, h int) {
+	s.list.setWidth(w)
+	s.list.setHeight(h - 10)
+}
+
 // load rebuilds the list from the installed database, prepending "Update All".
 func (s *updateScreen) load() error {
 	records, err := s.deps.installedRecords()
@@ -192,7 +197,15 @@ func renderOutcomes(os []updater.Outcome) string {
 		if o.Err != nil {
 			fmt.Fprintf(&b, "%s: %s\n", o.Name, o.Err.Error())
 		} else {
-			fmt.Fprintf(&b, "%s: up to date\n", o.Name)
+			out := strings.TrimSpace(o.Output)
+			if out == "" || strings.Contains(strings.ToLower(out), "already up to date") {
+				fmt.Fprintf(&b, "%s: up to date\n", o.Name)
+			} else {
+				fmt.Fprintf(&b, "%s:\n", o.Name)
+				for _, line := range strings.Split(out, "\n") {
+					fmt.Fprintf(&b, "  %s\n", line)
+				}
+			}
 		}
 	}
 	return strings.TrimRight(b.String(), "\n")

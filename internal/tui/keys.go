@@ -8,10 +8,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// keyID returns a stable, lowercased string identifying the user-meaningful
-// key for a KeyMsg. Bubble Tea's KeyMsg.String() is already designed for
-// direct comparison ("up", "down", "enter", "esc", "q", "ctrl+c", ...);
-// we only normalise case so callers can write keyID(msg) == "Q".
+// keyID returns the stable string representation identifying the user-meaningful
+// key for a KeyMsg. Bubble Tea's KeyMsg.String() is designed for direct
+// comparison ("up", "down", "enter", "esc", "q", "g", "G", "ctrl+c", ...).
+// Casing is preserved so that case-sensitive keybindings (like 'g' for top
+// and 'G' for bottom) function correctly.
 func keyID(msg tea.KeyMsg) string {
 	return msg.String()
 }

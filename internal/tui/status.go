@@ -22,6 +22,12 @@ func liveStatus(d *deps, rec storage.Record) string {
 	if err != nil {
 		return "Missing"
 	}
+	if rec.Repo == storage.ImportedRepoTag {
+		if info.IsDir() {
+			return "Installed"
+		}
+		return "Missing"
+	}
 	if info.Mode()&os.ModeSymlink == 0 {
 		return "Missing"
 	}

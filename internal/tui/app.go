@@ -54,6 +54,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		a.width, a.height = msg.Width, msg.Height
+		for _, s := range a.screens {
+			s.setSize(a.width, a.height)
+		}
 		return a, nil
 
 	case navMsg:
@@ -89,6 +92,7 @@ func (a *App) switchTo(kind screenKind) (tea.Model, tea.Cmd) {
 	}
 	a.active = kind
 	a.current = target
+	target.setSize(a.width, a.height)
 	target.enter()
 	// Re-run Init so any screen that schedules work in Init gets a chance.
 	return a, target.Init()

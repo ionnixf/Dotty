@@ -12,18 +12,31 @@ import (
 	"github.com/ion/dotty/pkg/configs"
 )
 
+// ConfigAlternative represents one alternative repository/configuration source
+// for a package target.
+type ConfigAlternative struct {
+	Name        string `json:"name"`
+	Repo        string `json:"repo"`
+	Source      string `json:"source,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
 // Package is one installable entry in the catalog.
 //
 // Source is optional: when empty, the whole repository root is linked to
 // Target ("target -> repo contents"). When set, only the repo/Source
 // subdirectory is linked. This lets a single catalog describe both repos that
 // keep their config at the root and repos that keep it under a subdirectory.
+//
+// If Alternatives is non-empty, the user is prompted to select which
+// configuration they want to install.
 type Package struct {
-	Name        string `json:"name"`
-	Repo        string `json:"repo"`
-	Source      string `json:"source,omitempty"`
-	Target      string `json:"target"`
-	Description string `json:"description,omitempty"`
+	Name         string              `json:"name"`
+	Repo         string              `json:"repo,omitempty"`
+	Source       string              `json:"source,omitempty"`
+	Target       string              `json:"target"`
+	Description  string              `json:"description,omitempty"`
+	Alternatives []ConfigAlternative `json:"alternatives,omitempty"`
 }
 
 // Load returns the effective catalog: the user override if present, otherwise
@@ -64,11 +77,19 @@ func parse(raw []byte) ([]Package, error) {
 		if p.Name == "" {
 			return nil, fmt.Errorf("package at index %d: empty name", i)
 		}
-		if p.Repo == "" {
-			return nil, fmt.Errorf("package %q: empty repo", p.Name)
-		}
 		if p.Target == "" {
 			return nil, fmt.Errorf("package %q: empty target", p.Name)
+		}
+		if p.Repo == "" && len(p.Alternatives) == 0 {
+			return nil, fmt.Errorf("package %q: empty repo and no alternatives", p.Name)
+		}
+		for j, alt := range p.Alternatives {
+			if alt.Name == "" {
+				return nil, fmt.Errorf("package %q alternative at index %d: empty name", p.Name, j)
+			}
+			if alt.Repo == "" {
+				return nil, fmt.Errorf("package %q alternative %q: empty repo", p.Name, alt.Name)
+			}
 		}
 		if seen[p.Name] {
 			return nil, fmt.Errorf("duplicate package name %q", p.Name)

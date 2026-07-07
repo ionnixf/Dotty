@@ -51,6 +51,11 @@ func (s *removeScreen) help() string {
 
 func (s *removeScreen) enter() { s.err = s.load() }
 
+func (s *removeScreen) setSize(w, h int) {
+	s.list.setWidth(w)
+	s.list.setHeight(h - 10)
+}
+
 func (s *removeScreen) load() error {
 	records, err := s.deps.installedRecords()
 	if err != nil {

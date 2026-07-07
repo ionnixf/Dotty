@@ -8,9 +8,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"time"
 )
+
+// ImportedRepoTag is the repository URL sentinel value for packages imported
+// from local configuration directories rather than cloned from a git remote.
+const ImportedRepoTag = "imported:existing"
 
 // Record describes one installed package. Target is stored as the user wrote
 // it in the catalog (commonly with a leading "~") so the file remains readable.
@@ -71,7 +76,7 @@ func (s *Store) Save(db Database) error {
 	}
 	raw = append(raw, '\n')
 
-	dir := fileDir(s.path)
+	dir := filepath.Dir(s.path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("create data dir %s: %w", dir, err)
 	}
@@ -94,19 +99,6 @@ func (s *Store) Save(db Database) error {
 		return fmt.Errorf("commit database: %w", err)
 	}
 	return nil
-}
-
-// fileDir returns the directory portion of path, or "." if none.
-func fileDir(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == os.PathSeparator {
-			if i == 0 {
-				return string(os.PathSeparator)
-			}
-			return path[:i]
-		}
-	}
-	return "."
 }
 
 // Add inserts or replaces a record keyed by package name and persists.

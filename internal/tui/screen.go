@@ -31,6 +31,8 @@ type screen interface {
 	// enter is called whenever the app makes this screen active, giving it
 	// a chance to refresh its data (e.g. re-read the installed database).
 	enter()
+	// setSize communicates the current terminal width and height to the screen.
+	setSize(w, h int)
 }
 
 // navMsg switches the app to a different screen.

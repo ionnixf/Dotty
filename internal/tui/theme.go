@@ -16,24 +16,24 @@ type palette struct {
 
 var palettes = map[string]palette{
 	"dark": {
-		Primary:    lipgloss.Color("213"),
-		Accent:     lipgloss.Color("117"),
-		Muted:      lipgloss.Color("245"),
-		Success:    lipgloss.Color("114"),
-		Warning:    lipgloss.Color("221"),
-		Danger:     lipgloss.Color("203"),
-		Border:     lipgloss.Color("240"),
-		Background: lipgloss.Color("236"),
+		Primary:    lipgloss.Color("#a78bfa"), // soft violet
+		Accent:     lipgloss.Color("#22d3ee"), // cyan
+		Muted:      lipgloss.Color("#6b7280"), // slate gray
+		Success:    lipgloss.Color("#34d399"), // emerald
+		Warning:    lipgloss.Color("#fbbf24"), // amber
+		Danger:     lipgloss.Color("#f87171"), // rose
+		Border:     lipgloss.Color("#4b5563"), // dark gray border
+		Background: lipgloss.Color("#1f2937"), // dark background for header/footer
 	},
 	"light": {
-		Primary:    lipgloss.Color("91"),
-		Accent:     lipgloss.Color("25"),
-		Muted:      lipgloss.Color("242"),
-		Success:    lipgloss.Color("22"),
-		Warning:    lipgloss.Color("130"),
-		Danger:     lipgloss.Color("124"),
-		Border:     lipgloss.Color("250"),
-		Background: lipgloss.Color("253"),
+		Primary:    lipgloss.Color("#6d28d9"), // deep violet
+		Accent:     lipgloss.Color("#0891b2"), // deep cyan
+		Muted:      lipgloss.Color("#6b7280"), // gray
+		Success:    lipgloss.Color("#059669"), // deep emerald
+		Warning:    lipgloss.Color("#d97706"), // deep amber
+		Danger:     lipgloss.Color("#dc2626"), // red
+		Border:     lipgloss.Color("#d1d5db"), // light gray border
+		Background: lipgloss.Color("#f3f4f6"), // light background for header/footer
 	},
 }
 
@@ -76,7 +76,7 @@ func NewTheme(name string) Theme {
 	panel := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(pal.Border).
-		Padding(0, 1)
+		Padding(1, 2)
 
 	return Theme{
 		Name: name,
@@ -84,7 +84,7 @@ func NewTheme(name string) Theme {
 			Bold(true).
 			Foreground(pal.Primary).
 			Background(pal.Background).
-			Padding(0, 1),
+			Padding(0, 2),
 		Title: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(pal.Primary),
@@ -92,8 +92,8 @@ func NewTheme(name string) Theme {
 			Foreground(pal.Muted),
 		cursorStyle: lipgloss.NewStyle().Bold(true).Foreground(pal.Primary),
 		Panel:       panel,
-		RowHead:     lipgloss.NewStyle().Bold(true).Foreground(pal.Accent),
-		Selected:    lipgloss.NewStyle().Bold(true).Foreground(pal.Primary).Background(pal.Background),
+		RowHead:     lipgloss.NewStyle().Bold(true).Foreground(pal.Accent).Underline(true),
+		Selected:    lipgloss.NewStyle().Bold(true).Foreground(pal.Primary).Background(pal.Background).Padding(0, 1),
 		Muted:       lipgloss.NewStyle().Foreground(pal.Muted),
 		Accent:      lipgloss.NewStyle().Foreground(pal.Accent),
 		Success:     lipgloss.NewStyle().Foreground(pal.Success),
@@ -102,7 +102,7 @@ func NewTheme(name string) Theme {
 		Footer: lipgloss.NewStyle().
 			Foreground(pal.Muted).
 			Background(pal.Background).
-			Padding(0, 1),
+			Padding(0, 2),
 		Status: lipgloss.NewStyle().Foreground(pal.Muted),
 	}
 }

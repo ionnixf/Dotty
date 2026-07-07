@@ -38,6 +38,9 @@ func (u *Updater) Update(name string) Outcome {
 	if !ok {
 		return Outcome{Name: name, Err: fmt.Errorf("package %q is not installed", name)}
 	}
+	if rec.Repo == storage.ImportedRepoTag {
+		return Outcome{Name: name, Output: "local imported configuration; skipping update"}
+	}
 	repoDir := filepath.Join(u.paths.RepoDir, rec.Name)
 	out, err := u.git.Pull(repoDir)
 	return Outcome{Name: name, Output: out, Err: err}
@@ -52,6 +55,10 @@ func (u *Updater) UpdateAll() ([]Outcome, error) {
 	}
 	results := make([]Outcome, 0, len(records))
 	for _, rec := range records {
+		if rec.Repo == storage.ImportedRepoTag {
+			results = append(results, Outcome{Name: rec.Name, Output: "local imported configuration; skipping update"})
+			continue
+		}
 		repoDir := filepath.Join(u.paths.RepoDir, rec.Name)
 		out, err := u.git.Pull(repoDir)
 		results = append(results, Outcome{Name: rec.Name, Output: out, Err: err})

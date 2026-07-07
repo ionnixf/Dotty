@@ -40,7 +40,7 @@ func (c *Client) Clone(repo, dst string) (string, error) {
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return "", fmt.Errorf("create parent of %s: %w", dst, err)
 	}
-	out, err := c.run(dst, "clone", "--depth", "1", repo, dst)
+	out, err := c.run(filepath.Dir(dst), "clone", "--depth", "1", repo, dst)
 	if err != nil {
 		return out, fmt.Errorf("git clone %s: %w", repo, err)
 	}
@@ -78,6 +78,18 @@ func (c *Client) IsRepo(dir string) (bool, error) {
 	return true, nil
 }
 
+// RemoteURL returns the remote origin URL of the repository in dir.
+func (c *Client) RemoteURL(dir string) (string, error) {
+	if err := c.ensure(); err != nil {
+		return "", err
+	}
+	out, err := c.run(dir, "config", "--get", "remote.origin.url")
+	if err != nil {
+		return "", fmt.Errorf("git config remote.origin.url in %s: %w", dir, err)
+	}
+	return strings.TrimSpace(out), nil
+}
+
 // run executes git with the given args inside dir and returns trimmed
 // combined output. dir may be "" to run in the current directory.
 func (c *Client) run(dir string, args ...string) (string, error) {
@@ -85,6 +97,7 @@ func (c *Client) run(dir string, args ...string) (string, error) {
 	if dir != "" {
 		cmd.Dir = dir
 	}
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 	out, err := cmd.CombinedOutput()
 	body := strings.TrimRight(string(out), "\n\r")
 	return body, err

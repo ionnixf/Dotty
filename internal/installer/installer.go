@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ion/dotty/internal/config"
 	"github.com/ion/dotty/internal/git"
@@ -120,7 +121,15 @@ func (i *Installer) ensureRepo(repo, repoDir string) error {
 		return fmt.Errorf("check repo %s: %w", repoDir, err)
 	}
 	if isRepo {
-		return nil
+		remote, err := i.git.RemoteURL(repoDir)
+		if err == nil && normalizeURL(remote) == normalizeURL(repo) {
+			return nil
+		}
+		// Remote URL differs (e.g. user selected a different configuration alternative):
+		// clear the old repo directory so a clean clone can be fetched.
+		if err := os.RemoveAll(repoDir); err != nil {
+			return fmt.Errorf("clear old repository %s for new URL: %w", repoDir, err)
+		}
 	}
 	if _, err := os.Stat(repoDir); err == nil {
 		// Directory exists but is not a git repo. Refuse to avoid deleting
@@ -135,6 +144,13 @@ func (i *Installer) ensureRepo(repo, repoDir string) error {
 		return err
 	}
 	return nil
+}
+
+func normalizeURL(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.TrimSuffix(s, "/")
+	s = strings.TrimSuffix(s, ".git")
+	return strings.ToLower(s)
 }
 
 // removeIfEmpty deletes dir only when it contains no entries, so we never
@@ -155,15 +171,10 @@ func removeIfEmpty(dir string) {
 // target is any other existing filesystem entry, ErrTargetExists is returned
 // so the caller can prompt the user instead of destroying data.
 func (i *Installer) link(source, target string) error {
-	info, err := os.Stat(source)
-	if err != nil {
+	if _, err := os.Stat(source); err != nil {
 		return fmt.Errorf("link source %s missing in repo: %w", source, err)
 	}
-	if !info.IsDir() {
-		// Dotty links directories. A file source means the catalog is wrong;
-		// fail explicitly rather than linking a single file to a config path.
-		return fmt.Errorf("link source %s is not a directory", source)
-	}
+	// Dotty links directories or files. Source must exist.
 
 	if existing, err := os.Lstat(target); err == nil {
 		if existing.Mode()&os.ModeSymlink != 0 {

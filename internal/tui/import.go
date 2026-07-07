@@ -11,10 +11,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// importedRepoTag marks a record that was added by the Import Existing flow
-// rather than cloned from a remote. The Sync screen still treats it like any
-// other record; its symlink is already on disk pointing at the real config.
-const importedRepoTag = "imported:existing"
+// The Sync screen treats imported records specially (validating they exist
+// as directories on disk). We use the tag defined in storage.ImportedRepoTag.
 
 // importItem is one discovered config in the import list.
 type importItem struct {
@@ -72,6 +70,11 @@ func (s *importScreen) help() string {
 // not work because the screen interface's enter() has no return value.
 func (s *importScreen) enter() {
 	s.startScan()
+}
+
+func (s *importScreen) setSize(w, h int) {
+	s.list.setWidth(w)
+	s.list.setHeight(h - 10)
 }
 
 // Init kicks off the scan scheduled by enter() and starts the spinner. This
@@ -209,7 +212,7 @@ func (s *importScreen) runImport(f scanner.Find) tea.Cmd {
 	return func() tea.Msg {
 		rec := storage.Record{
 			Name:   f.Name,
-			Repo:   importedRepoTag,
+			Repo:   storage.ImportedRepoTag,
 			Source: "",
 			Target: config.Shorten(f.Target, home),
 		}

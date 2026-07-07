@@ -6,6 +6,7 @@ import (
 
 	"github.com/ion/dotty/internal/config"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -26,19 +27,28 @@ const (
 // copy and write it back via SaveSettings + the deps pointer so every other
 // screen picks up theme/repo-dir changes on the next render.
 type settingsScreen struct {
-	deps   *deps
-	cursor int
-	local  config.Settings
-	status string
-	err    error
+	deps    *deps
+	cursor  int
+	local   config.Settings
+	status  string
+	err     error
+	input   textinput.Model
+	editing bool
 }
 
 func newSettingsScreen(d *deps) *settingsScreen {
-	return &settingsScreen{deps: d}
+	ti := textinput.New()
+	ti.Placeholder = "Default repo directory"
+	ti.CharLimit = 200
+	ti.Width = 40
+	return &settingsScreen{deps: d, input: ti}
 }
 
 func (s *settingsScreen) title() string { return "Settings" }
 func (s *settingsScreen) help() string {
+	if s.editing {
+		return "enter confirm · esc cancel"
+	}
 	return "↑↓ navigate · enter/space toggle · backspace clear · s save · esc back"
 }
 
@@ -47,13 +57,38 @@ func (s *settingsScreen) enter() {
 	if s.deps.settings != nil {
 		s.local = *s.deps.settings
 	}
+	s.input.SetValue(s.local.RepoDirectory)
+	s.editing = false
 	s.status = ""
 	s.err = nil
 }
 
+func (s *settingsScreen) setSize(w, h int) {}
+
 func (s *settingsScreen) Init() tea.Cmd { return nil }
 
 func (s *settingsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if s.editing {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch keyID(msg) {
+			case "enter":
+				s.local.RepoDirectory = strings.TrimSpace(s.input.Value())
+				s.editing = false
+				s.input.Blur()
+				return s, s.save()
+			case "esc":
+				s.editing = false
+				s.input.Blur()
+				s.input.SetValue(s.local.RepoDirectory)
+				return s, nil
+			}
+		}
+		var cmd tea.Cmd
+		s.input, cmd = s.input.Update(msg)
+		return s, cmd
+	}
+
 	switch msg := msg.(type) {
 	case settingsSavedMsg:
 		if msg.err != nil {
@@ -95,11 +130,19 @@ func (s *settingsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.cursor = 0
 			}
 		case "enter", " ":
+			if settingsRow(s.cursor) == rowRepoDir {
+				s.editing = true
+				s.input.Focus()
+				s.input.SetValue(s.local.RepoDirectory)
+				s.input.CursorEnd()
+				return s, nil
+			}
 			s.adjust(s.cursor)
 			return s, s.save()
 		case "backspace", "delete":
 			if settingsRow(s.cursor) == rowRepoDir {
 				s.local.RepoDirectory = ""
+				s.input.SetValue("")
 				return s, s.save()
 			}
 		case "s":
@@ -182,6 +225,9 @@ func (s *settingsScreen) renderValue(row settingsRow) string {
 	theme := s.deps.theme
 	switch row {
 	case rowRepoDir:
+		if s.editing {
+			return s.input.View()
+		}
 		v := s.local.RepoDirectory
 		if v == "" {
 			return theme.Muted.Render("(default)")

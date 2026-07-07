@@ -31,30 +31,59 @@ func (i installItem) Render() string {
 	return fmt.Sprintf("%s%s", mark, name)
 }
 
+// altItem is one configuration choice in the alternatives list.
+type altItem struct {
+	alt catalog.ConfigAlternative
+}
+
+func (a altItem) Render() string {
+	if a.alt.Description != "" {
+		return fmt.Sprintf("%-18s %s", a.alt.Name, a.alt.Description)
+	}
+	return a.alt.Name
+}
+
 // installScreen lists installable packages and runs installs.
 type installScreen struct {
-	deps     *deps
-	list     *list
-	sp       spinner.Model
-	spinning bool
-	status   string // transient message shown above the footer
-	err      error
-	pkgs     []catalog.Package
+	deps                *deps
+	list                *list
+	sp                  spinner.Model
+	spinning            bool
+	status              string // transient message shown above the footer
+	err                 error
+	pkgs                []catalog.Package
+	showingAlternatives bool
+	selectedPkg         catalog.Package
+	alternativesList     *list
 }
 
 func newInstallScreen(d *deps) *installScreen {
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
 	l := newList("Install", d.theme)
-	return &installScreen{deps: d, list: l, sp: sp}
+	altL := newList("Select Configuration", d.theme)
+	return &installScreen{deps: d, list: l, sp: sp, alternativesList: altL}
 }
 
 func (s *installScreen) title() string { return "Install" }
-func (s *installScreen) help() string  { return "↑↓ navigate · enter install · esc back" }
+func (s *installScreen) help() string {
+	if s.showingAlternatives {
+		return "↑↓ navigate · enter select · esc back"
+	}
+	return "↑↓ navigate · enter install · esc back"
+}
 
 // enter reloads the catalog and the installed set so the screen reflects the
 // current state each time it becomes active.
 func (s *installScreen) enter() {
+	s.showingAlternatives = false
 	s.err = s.load()
+}
+
+func (s *installScreen) setSize(w, h int) {
+	s.list.setWidth(w)
+	s.list.setHeight(h - 10)
+	s.alternativesList.setWidth(w)
+	s.alternativesList.setHeight(h - 10)
 }
 
 // load fetches catalog + installed records and rebuilds the list items.
@@ -87,6 +116,37 @@ func (s *installScreen) load() error {
 func (s *installScreen) Init() tea.Cmd { return nil }
 
 func (s *installScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if s.showingAlternatives {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch keyID(msg) {
+			case "esc", "q":
+				s.showingAlternatives = false
+				return s, nil
+			case "enter":
+				if s.alternativesList.selected() == nil {
+					return s, nil
+				}
+				alt := s.alternativesList.selected().(altItem).alt
+				s.showingAlternatives = false
+				s.status = "Installing " + s.selectedPkg.Name + " (" + alt.Name + ") ..."
+				s.err = nil
+				s.spinning = true
+				req := installer.Request{
+					Name:   s.selectedPkg.Name,
+					Repo:   alt.Repo,
+					Source: alt.Source,
+					Target: s.selectedPkg.Target,
+				}
+				return s, tea.Batch(s.sp.Tick, s.runInstall(req))
+			}
+			if s.alternativesList.handleKey(msg) {
+				return s, nil
+			}
+		}
+		return s, nil
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keyID(msg) {
@@ -102,6 +162,19 @@ func (s *installScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return s, nil
 			}
 			it := s.list.selected().(installItem)
+			if len(it.pkg.Alternatives) > 0 {
+				s.showingAlternatives = true
+				s.selectedPkg = it.pkg
+				s.alternativesList.title = "Select Configuration for " + it.pkg.Name
+				items := make([]listItem, len(it.pkg.Alternatives))
+				for idx, alt := range it.pkg.Alternatives {
+					items[idx] = altItem{alt: alt}
+				}
+				s.alternativesList.setItems(items)
+				s.alternativesList.cursor = 0
+				return s, nil
+			}
+
 			s.status = "Installing " + it.pkg.Name + " ..."
 			s.err = nil
 			s.spinning = true
@@ -166,7 +239,12 @@ func (s *installScreen) runInstall(req installer.Request) tea.Cmd {
 }
 
 func (s *installScreen) View() string {
-	body := s.list.render()
+	var body string
+	if s.showingAlternatives {
+		body = s.alternativesList.render()
+	} else {
+		body = s.list.render()
+	}
 	if s.spinning {
 		body += "\n\n" + s.deps.theme.Accent.Render(s.sp.View()) + " " + s.deps.theme.Muted.Render(s.status)
 	} else if s.status != "" {

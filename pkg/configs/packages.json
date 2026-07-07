@@ -1,38 +1,107 @@
 [
   {
-    "name": "neovim",
-    "repo": "https://github.com/example/neovim-dotfiles",
-    "target": "~/.config/nvim",
-    "description": "Neovim configuration"
+    "name": "fastfetch",
+    "repo": "https://github.com/fastfetch-cli/fastfetch",
+    "source": "presets/examples/7",
+    "target": "~/.config/fastfetch",
+    "description": "Fastfetch system-information tool — example config preset",
+    "placeholder": true
   },
   {
-    "name": "hyprland",
-    "repo": "https://github.com/example/hyprland-dotfiles",
-    "target": "~/.config/hypr",
-    "description": "Hyprland compositor configuration"
-  },
-  {
-    "name": "waybar",
-    "repo": "https://github.com/example/waybar-dotfiles",
-    "target": "~/.config/waybar",
-    "description": "Waybar status bar configuration"
+    "name": "fish",
+    "repo": "https://github.com/placeholder/dotty-fish",
+    "target": "~/.config/fish",
+    "description": "Fish shell configuration",
+    "placeholder": true
   },
   {
     "name": "foot",
-    "repo": "https://github.com/example/foot-dotfiles",
+    "repo": "https://github.com/placeholder/dotty-foot",
     "target": "~/.config/foot",
-    "description": "Foot terminal emulator configuration"
+    "description": "Foot terminal emulator configuration",
+    "placeholder": true
   },
   {
-    "name": "fastfetch",
-    "repo": "https://github.com/example/fastfetch-dotfiles",
-    "target": "~/.config/fastfetch",
-    "description": "Fastfetch system info configuration"
+    "name": "hyprland",
+    "target": "~/.config/hypr",
+    "description": "Hyprland Wayland compositor configurations",
+    "alternatives": [
+      {
+        "name": "hyprlua-btw",
+        "repo": "https://github.com/tonybanters/hyprlua-btw",
+        "source": "hypr",
+        "description": "Lua-based configuration (hyprlua-btw) (VERIFIED)"
+      },
+      {
+        "name": "official-example",
+        "repo": "https://github.com/hyprwm/hyprland",
+        "source": "example",
+        "description": "Official minimal configuration example (PLACEHOLDER)"
+      }
+    ]
+  },
+  {
+    "name": "kitty",
+    "repo": "https://github.com/placeholder/dotty-kitty",
+    "target": "~/.config/kitty",
+    "description": "Kitty terminal emulator configuration",
+    "placeholder": true
+  },
+  {
+    "name": "mako",
+    "repo": "https://github.com/placeholder/dotty-mako",
+    "target": "~/.config/mako",
+    "description": "Mako notification daemon configuration",
+    "placeholder": true
+  },
+  {
+    "name": "neovim",
+    "repo": "https://github.com/LazyVim/starter",
+    "target": "~/.config/nvim",
+    "description": "Neovim configuration (LazyVim starter)",
+    "placeholder": false
+  },
+  {
+    "name": "starship",
+    "repo": "https://github.com/placeholder/dotty-starship",
+    "target": "~/.config/starship",
+    "description": "Starship prompt configuration",
+    "placeholder": true
+  },
+  {
+    "name": "tmux",
+    "repo": "https://github.com/placeholder/dotty-tmux",
+    "target": "~/.config/tmux",
+    "description": "Tmux terminal multiplexer configuration",
+    "placeholder": true
+  },
+  {
+    "name": "waybar",
+    "repo": "https://github.com/Alexays/Waybar",
+    "source": "resources",
+    "target": "~/.config/waybar",
+    "description": "Waybar status bar — sample configuration",
+    "placeholder": true
+  },
+  {
+    "name": "wezterm",
+    "repo": "https://github.com/placeholder/dotty-wezterm",
+    "target": "~/.config/wezterm",
+    "description": "WezTerm terminal emulator configuration",
+    "placeholder": true
+  },
+  {
+    "name": "wofi",
+    "repo": "https://github.com/placeholder/dotty-wofi",
+    "target": "~/.config/wofi",
+    "description": "Wofi application launcher configuration",
+    "placeholder": true
   },
   {
     "name": "zsh",
-    "repo": "https://github.com/example/zsh-dotfiles",
+    "repo": "https://github.com/placeholder/dotty-zsh",
     "target": "~/.config/zsh",
-    "description": "Zsh shell configuration"
+    "description": "Zsh shell configuration",
+    "placeholder": true
   }
 ]

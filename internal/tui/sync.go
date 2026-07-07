@@ -53,6 +53,8 @@ func (s *syncScreen) enter() {
 	s.startCheck()
 }
 
+func (s *syncScreen) setSize(w, h int) {}
+
 // Init kicks off the check scheduled by enter() and starts the spinner.
 // Without this the Sync screen would set its state to syncChecking and hang
 // on "Checking installed packages ..." forever, because enter() cannot return
