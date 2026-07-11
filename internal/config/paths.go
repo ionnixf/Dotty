@@ -80,6 +80,24 @@ func (p Paths) Ensure() error {
 	return nil
 }
 
+// SafeJoin joins a base directory and a name, ensuring that the name contains no path
+// traversal elements (like slashes, backslashes, or dot-dots) and that the resolved
+// path remains strictly within the base directory.
+func SafeJoin(base, name string) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("empty name")
+	}
+	if strings.Contains(name, "..") || strings.Contains(name, "/") || strings.Contains(name, "\\") || filepath.IsAbs(name) {
+		return "", fmt.Errorf("invalid identifier %q", name)
+	}
+	path := filepath.Join(base, name)
+	rel, err := filepath.Rel(base, path)
+	if err != nil || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
+		return "", fmt.Errorf("path traversal detected for %q", name)
+	}
+	return path, nil
+}
+
 // Expand converts a path that may start with "~" into an absolute path.
 // A bare "~" or "~/..." is replaced with home; "~user" is left untouched
 // because Go has no portable way to look up other users' homes.
@@ -98,6 +116,24 @@ func Expand(path, home string) (string, error) {
 	}
 	// "~user/..." - leave as-is.
 	return path, nil
+}
+
+// ExpandInHome expands path and requires the resulting path to be absolute and
+// lexically contained in home. Filesystem mutations use this for persisted
+// targets as well as new install requests.
+func ExpandInHome(path, home string) (string, error) {
+	expanded, err := Expand(path, home)
+	if err != nil {
+		return "", err
+	}
+	if !filepath.IsAbs(expanded) {
+		return "", fmt.Errorf("path %q must be absolute", path)
+	}
+	rel, err := filepath.Rel(home, expanded)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return "", fmt.Errorf("path %q is outside home directory %q", path, home)
+	}
+	return expanded, nil
 }
 
 // Shorten is the inverse of Expand for display: an absolute path inside home

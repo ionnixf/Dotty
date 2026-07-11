@@ -7,6 +7,7 @@ import (
 
 	"github.com/ion/dotty/internal/catalog"
 	"github.com/ion/dotty/internal/config"
+	"github.com/ion/dotty/internal/git"
 )
 
 // writeCatalog writes a packages.json into dir and returns dir's path.
@@ -199,5 +200,17 @@ func TestResolverContinuesOnFetchFailure(t *testing.T) {
 	}
 	if len(entries) != 1 || entries[0].Name != "good-pkg" {
 		t.Fatalf("expected only good-pkg, got %+v", entries)
+	}
+}
+
+func TestRepositoryPathTraversal(t *testing.T) {
+	r := Repository{
+		Name: "../escaping-name",
+		URL:  "https://example.com/repo",
+		Kind: KindGit,
+	}
+	_, err := r.Fetch(&git.Client{}, t.TempDir())
+	if err == nil {
+		t.Error("expected error for path traversal in Repository Name, got nil")
 	}
 }

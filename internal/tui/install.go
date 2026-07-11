@@ -89,16 +89,16 @@ func (s *installScreen) setSize(w, h int) {
 // load fetches catalog + installed records and rebuilds the list items.
 func (s *installScreen) load() error {
 	pkgs, err := s.deps.reloadCatalog()
-	if err != nil {
+	if err != nil && len(pkgs) == 0 {
 		s.pkgs = nil
 		s.list.setItems(nil)
 		return err
 	}
-	installed, err := s.deps.installedRecords()
-	if err != nil {
+	installed, errInst := s.deps.installedRecords()
+	if errInst != nil {
 		s.pkgs = nil
 		s.list.setItems(nil)
-		return err
+		return errInst
 	}
 	installedSet := make(map[string]bool, len(installed))
 	for _, r := range installed {
@@ -110,7 +110,7 @@ func (s *installScreen) load() error {
 		items = append(items, installItem{pkg: p, installed: installedSet[p.Name]})
 	}
 	s.list.setItems(items)
-	return nil
+	return err
 }
 
 func (s *installScreen) Init() tea.Cmd { return nil }

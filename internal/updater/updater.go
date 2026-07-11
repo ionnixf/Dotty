@@ -3,7 +3,6 @@ package updater
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/ion/dotty/internal/config"
 	"github.com/ion/dotty/internal/git"
@@ -41,7 +40,10 @@ func (u *Updater) Update(name string) Outcome {
 	if rec.Repo == storage.ImportedRepoTag {
 		return Outcome{Name: name, Output: "local imported configuration; skipping update"}
 	}
-	repoDir := filepath.Join(u.paths.RepoDir, rec.Name)
+	repoDir, err := config.SafeJoin(u.paths.RepoDir, rec.Name)
+	if err != nil {
+		return Outcome{Name: name, Err: fmt.Errorf("invalid package repository path: %w", err)}
+	}
 	out, err := u.git.Pull(repoDir)
 	return Outcome{Name: name, Output: out, Err: err}
 }
@@ -59,7 +61,11 @@ func (u *Updater) UpdateAll() ([]Outcome, error) {
 			results = append(results, Outcome{Name: rec.Name, Output: "local imported configuration; skipping update"})
 			continue
 		}
-		repoDir := filepath.Join(u.paths.RepoDir, rec.Name)
+		repoDir, err := config.SafeJoin(u.paths.RepoDir, rec.Name)
+		if err != nil {
+			results = append(results, Outcome{Name: rec.Name, Err: fmt.Errorf("invalid package repository path: %w", err)})
+			continue
+		}
 		out, err := u.git.Pull(repoDir)
 		results = append(results, Outcome{Name: rec.Name, Output: out, Err: err})
 	}

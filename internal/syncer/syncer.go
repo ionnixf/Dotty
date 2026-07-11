@@ -65,7 +65,7 @@ func (s *Syncer) Check() ([]Problem, error) {
 // if the record is healthy. A single record may have multiple issues; we
 // report the first we notice, ordered from most actionable to least.
 func (s *Syncer) inspect(rec storage.Record) (Problem, bool) {
-	target, err := config.Expand(rec.Target, s.home)
+	target, err := config.ExpandInHome(rec.Target, s.home)
 	if err != nil {
 		return Problem{Record: rec, Kind: ProblemMissingSymlink, Detail: fmt.Sprintf("invalid target %q: %v", rec.Target, err)}, true
 	}
@@ -98,7 +98,10 @@ func (s *Syncer) inspect(rec storage.Record) (Problem, bool) {
 	}
 
 	// Symlink is healthy; verify the backing repo still exists.
-	repoDir := filepath.Join(s.paths.RepoDir, rec.Name)
+	repoDir, err := config.SafeJoin(s.paths.RepoDir, rec.Name)
+	if err != nil {
+		return Problem{Record: rec, Kind: ProblemMissingRepo, Detail: fmt.Sprintf("invalid repo name %q: %v", rec.Name, err)}, true
+	}
 	isRepo, err := s.git.IsRepo(repoDir)
 	if err != nil {
 		return Problem{Record: rec, Kind: ProblemMissingRepo, Detail: fmt.Sprintf("cannot check repo %s: %v", repoDir, err)}, true
@@ -128,11 +131,18 @@ func KindLabel(k ProblemKind) string {
 // exists. It does nothing destructive: it only calls os.Symlink at the
 // recorded target after removing a pre-existing broken symlink there.
 func (s *Syncer) Repair(rec storage.Record) error {
-	target, err := config.Expand(rec.Target, s.home)
+	target, err := config.ExpandInHome(rec.Target, s.home)
 	if err != nil {
-		return fmt.Errorf("expand target %q: %w", rec.Target, err)
+		return fmt.Errorf("resolve target %q: %w", rec.Target, err)
 	}
-	source := installer.LinkSource(filepath.Join(s.paths.RepoDir, rec.Name), rec.Source)
+	repoDir, err := config.SafeJoin(s.paths.RepoDir, rec.Name)
+	if err != nil {
+		return fmt.Errorf("invalid repo name %q: %w", rec.Name, err)
+	}
+	source, err := installer.LinkSource(repoDir, rec.Source)
+	if err != nil {
+		return fmt.Errorf("invalid source path: %w", err)
+	}
 	if _, err := os.Stat(source); err != nil {
 		return fmt.Errorf("source missing, cannot repair: %w", err)
 	}
@@ -140,6 +150,10 @@ func (s *Syncer) Repair(rec storage.Record) error {
 	// Remove whatever is at target if it is a (likely broken) symlink.
 	if info, err := os.Lstat(target); err == nil {
 		if info.Mode()&os.ModeSymlink != 0 {
+			existingPath, errRead := os.Readlink(target)
+			if errRead == nil && existingPath != source {
+				return fmt.Errorf("cannot repair: symlink at %s points to %q, not %q", target, existingPath, source)
+			}
 			if err := os.Remove(target); err != nil {
 				return fmt.Errorf("remove broken symlink %s: %w", target, err)
 			}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // Settings is the persisted user configuration. JSON field tags keep the
@@ -103,7 +104,7 @@ func SaveSettings(paths Paths, s Settings) error {
 // falling back to the default Paths.RepoDir when the setting is empty.
 func ResolveRepoDir(s Settings, paths Paths) string {
 	if s.RepoDirectory == "" {
-		return paths.RepoDir
+		return filepath.Join(paths.DataDir, "repos")
 	}
 	return s.RepoDirectory
 }

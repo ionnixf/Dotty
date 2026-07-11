@@ -164,8 +164,14 @@ func (m *Manager) Remove(name string) error {
 	if idx == -1 {
 		return fmt.Errorf("repository %q not found", name)
 	}
+	removed := m.repo[idx]
 	m.repo = append(m.repo[:idx], m.repo[idx+1:]...)
-	return m.save()
+	if err := m.save(); err != nil {
+		// Roll back the in-memory deletion
+		m.repo = append(m.repo[:idx], append([]Repository{removed}, m.repo[idx:]...)...)
+		return err
+	}
+	return nil
 }
 
 // EmbeddedPackagesJSON returns the official catalog bytes. Exported for the

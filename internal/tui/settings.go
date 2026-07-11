@@ -102,7 +102,7 @@ func (s *settingsScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// screen (which holds the same *Theme pointer) picks up the new look
 		// on its next render — no restart required.
 		if s.deps.settings != nil {
-			*s.deps.settings = msg.saved
+			s.deps.updateSettings(msg.saved)
 		}
 		if s.deps.theme != nil && msg.saved.Theme != s.deps.theme.Name {
 			*s.deps.theme = NewTheme(msg.saved.Theme)

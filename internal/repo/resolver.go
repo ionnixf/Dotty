@@ -90,14 +90,11 @@ func (r *Resolver) Merge() ([]Entry, error) {
 // resolver's public read API and the natural drop-in for catalog.Load.
 func (r *Resolver) All() ([]catalog.Package, error) {
 	entries, err := r.Merge()
-	if err != nil {
-		return nil, err
-	}
 	pkgs := make([]catalog.Package, 0, len(entries))
 	for _, e := range entries {
 		pkgs = append(pkgs, e.Package)
 	}
-	return catalog.Sorted(pkgs), nil
+	return catalog.Sorted(pkgs), err
 }
 
 // Resolve picks the single package contributing to name, returning the package
@@ -105,13 +102,10 @@ func (r *Resolver) All() ([]catalog.Package, error) {
 // provides name (after conflict resolution).
 func (r *Resolver) Resolve(name string) (Entry, bool, error) {
 	entries, err := r.Merge()
-	if err != nil {
-		return Entry{}, false, err
-	}
 	for _, e := range entries {
 		if e.Name == name {
-			return e, true, nil
+			return e, true, err
 		}
 	}
-	return Entry{}, false, nil
+	return Entry{}, false, err
 }

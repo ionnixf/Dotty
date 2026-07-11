@@ -1,9 +1,8 @@
 package tui
 
 import (
-	"errors"
 	"fmt"
-	iofs "io/fs"
+	"os"
 
 	"github.com/ion/dotty/internal/catalog"
 	"github.com/ion/dotty/internal/config"
@@ -26,6 +25,7 @@ type deps struct {
 
 	store     *storage.Store
 	git       *git.Client
+	manager   *repo.Manager
 	resolver  *repo.Resolver
 	installer *installer.Installer
 	updater   *updater.Updater
@@ -52,6 +52,8 @@ func NewDeps(paths config.Paths, home, userConfigDir string) (*deps, error) {
 	settings.Theme = config.NormaliseTheme(settings.Theme)
 	theme := NewTheme(settings.Theme)
 
+	paths.RepoDir = config.ResolveRepoDir(settings, paths)
+
 	store := storage.New(paths.InstalledFile())
 	gc := git.New()
 
@@ -67,6 +69,7 @@ func NewDeps(paths config.Paths, home, userConfigDir string) (*deps, error) {
 		configDir: userConfigDir,
 		store:     store,
 		git:       gc,
+		manager:   manager,
 		resolver:  resolver,
 		installer: installer.New(gc, store, paths, home),
 		updater:   updater.New(gc, store, paths),
@@ -75,6 +78,19 @@ func NewDeps(paths config.Paths, home, userConfigDir string) (*deps, error) {
 		settings:  &settings,
 		theme:     &theme,
 	}, nil
+}
+
+// updateSettings applies the new settings dynamically to all services.
+func (d *deps) updateSettings(s config.Settings) {
+	*d.settings = s
+	d.paths.RepoDir = config.ResolveRepoDir(s, d.paths)
+
+	// Recreate services using the updated paths
+	d.resolver = repo.NewResolver(d.manager, d.git, d.paths)
+	d.installer = installer.New(d.git, d.store, d.paths, d.home)
+	d.updater = updater.New(d.git, d.store, d.paths)
+	d.remover = remover.New(d.store, d.paths, d.home)
+	d.syncer = syncer.New(d.store, d.paths, d.home, d.git)
 }
 
 // reloadCatalog returns the effective package catalog.
@@ -87,9 +103,13 @@ func NewDeps(paths config.Paths, home, userConfigDir string) (*deps, error) {
 // preserved verbatim.
 func (d *deps) reloadCatalog() ([]catalog.Package, error) {
 	if override := d.paths.CatalogOverride(); override != "" {
-		if pkgs, err := catalog.Load(override); err == nil {
-			return pkgs, nil
-		} else if !errors.Is(err, iofs.ErrNotExist) {
+		if _, err := os.Stat(override); err == nil {
+			if pkgs, err := catalog.Load(override); err == nil {
+				return pkgs, nil
+			} else {
+				return nil, err
+			}
+		} else if !os.IsNotExist(err) {
 			return nil, err
 		}
 	}

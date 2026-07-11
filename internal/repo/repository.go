@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ion/dotty/internal/catalog"
+	"github.com/ion/dotty/internal/config"
 	"github.com/ion/dotty/internal/git"
 )
 
@@ -93,7 +94,10 @@ func fetchGit(r Repository, g *git.Client, cacheDir string) (Index, error) {
 	if g == nil {
 		return Index{}, fmt.Errorf("repository %q: git client is required for git repositories", r.Name)
 	}
-	dst := filepath.Join(cacheDir, r.Name)
+	dst, err := config.SafeJoin(cacheDir, r.Name)
+	if err != nil {
+		return Index{}, fmt.Errorf("repository %q: invalid name: %w", r.Name, err)
+	}
 	// A shallow clone into a clean destination keeps the cached index current.
 	// If a previous clone exists, remove it so the next fetch is deterministic.
 	if err := os.RemoveAll(dst); err != nil && !os.IsNotExist(err) {

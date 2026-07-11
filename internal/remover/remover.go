@@ -42,9 +42,9 @@ func (r *Remover) Remove(name string) error {
 		return ErrNotFound
 	}
 
-	target, err := config.Expand(rec.Target, r.home)
+	target, err := config.ExpandInHome(rec.Target, r.home)
 	if err != nil {
-		return fmt.Errorf("expand target %q: %w", rec.Target, err)
+		return fmt.Errorf("resolve target %q: %w", rec.Target, err)
 	}
 
 	if err := r.unlink(target); err != nil {

@@ -43,9 +43,17 @@ func NewApp(d *deps) *App {
 	return app
 }
 
-// Init starts nothing: screens kick off their own async work (spinners, scans)
-// from their enter() call or on first key press.
-func (a *App) Init() tea.Cmd { return nil }
+// Init starts the background auto-update if enabled in settings.
+func (a *App) Init() tea.Cmd {
+	if a.deps.settings != nil && a.deps.settings.AutoUpdate {
+		upd := a.deps.updater
+		return func() tea.Msg {
+			_, _ = upd.UpdateAll()
+			return nil
+		}
+	}
+	return nil
+}
 
 // Update forwards messages to the active screen and intercepts the navigation
 // messages it returns. WindowSizeMsg is handled here so every screen gets the
