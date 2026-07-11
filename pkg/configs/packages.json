@@ -25,6 +25,7 @@
     "name": "hyprland",
     "target": "~/.config/hypr",
     "description": "Hyprland Wayland compositor configurations",
+    "placeholder": false,
     "alternatives": [
       {
         "name": "hyprlua-btw",
@@ -58,6 +59,7 @@
     "name": "neovim",
     "target": "~/.config/nvim",
     "description": "Popular Neovim configurations",
+    "placeholder": false,
     "alternatives": [
       {
         "name": "lazyvim",
