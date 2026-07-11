@@ -56,10 +56,25 @@
   },
   {
     "name": "neovim",
-    "repo": "https://github.com/LazyVim/starter",
     "target": "~/.config/nvim",
-    "description": "Neovim configuration (LazyVim starter)",
-    "placeholder": false
+    "description": "Popular Neovim configurations",
+    "alternatives": [
+      {
+        "name": "lazyvim",
+        "repo": "https://github.com/LazyVim/starter",
+        "description": "LazyVim starter configuration"
+      },
+      {
+        "name": "nvchad",
+        "repo": "https://github.com/NvChad/starter",
+        "description": "NvChad starter configuration"
+      },
+      {
+        "name": "astronvim",
+        "repo": "https://github.com/AstroNvim/template",
+        "description": "AstroNvim template configuration"
+      }
+    ]
   },
   {
     "name": "starship",
