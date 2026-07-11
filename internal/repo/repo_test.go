@@ -56,8 +56,8 @@ func TestManagerSeedsOfficialAndPersists(t *testing.T) {
 	}
 	// The official repository must always be present.
 	got := m.List()
-	if len(got) != 1 || got[0].Name != OfficialRepoName || got[0].Kind != KindEmbedded {
-		t.Fatalf("expected only official embedded repo, got %+v", got)
+	if len(got) != 1 || got[0].Name != OfficialRepoName || got[0].Kind != KindGit || got[0].URL != OfficialRepoURL {
+		t.Fatalf("expected only official git repo, got %+v", got)
 	}
 	// It must have been persisted to disk so a fresh load sees it too.
 	m2, err := NewManager(path)

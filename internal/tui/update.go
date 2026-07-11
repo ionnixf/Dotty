@@ -22,7 +22,11 @@ func (i updateItem) Render() string {
 	if i.all {
 		return "Update All"
 	}
-	return fmt.Sprintf("%-14s %s", i.rec.Name, i.rec.Target)
+	name := i.rec.Name
+	if i.rec.Config != "" {
+		name += " (" + i.rec.Config + ")"
+	}
+	return fmt.Sprintf("%-22s %s", name, i.rec.Target)
 }
 
 // updateScreen lists installed packages and runs git pull on the selection.

@@ -98,12 +98,25 @@ func fetchGit(r Repository, g *git.Client, cacheDir string) (Index, error) {
 	if err != nil {
 		return Index{}, fmt.Errorf("repository %q: invalid name: %w", r.Name, err)
 	}
-	// A shallow clone into a clean destination keeps the cached index current.
-	// If a previous clone exists, remove it so the next fetch is deterministic.
-	if err := os.RemoveAll(dst); err != nil && !os.IsNotExist(err) {
-		return Index{}, fmt.Errorf("repository %q: clear cache %s: %w", r.Name, dst, err)
+	// Preserve a valid cached catalog when the network is unavailable. A cache
+	// refresh is best-effort; only a first clone needs network access.
+	isRepo, err := g.IsRepo(dst)
+	if err != nil {
+		return Index{}, fmt.Errorf("repository %q: inspect cache: %w", r.Name, err)
 	}
-	if _, err := g.Clone(r.URL, dst); err != nil {
+	if isRepo {
+		if _, err := g.Pull(dst); err != nil {
+			idx, readErr := readPackages(r.Name, filepath.Join(dst, "packages.json"))
+			if readErr == nil {
+				return idx, nil
+			}
+			return Index{}, fmt.Errorf("repository %q: refresh cache: %w", r.Name, err)
+		}
+	} else if _, err := os.Stat(dst); err == nil {
+		return Index{}, fmt.Errorf("repository %q: cache %s is not a git repository", r.Name, dst)
+	} else if !os.IsNotExist(err) {
+		return Index{}, fmt.Errorf("repository %q: inspect cache %s: %w", r.Name, dst, err)
+	} else if _, err := g.Clone(r.URL, dst); err != nil {
 		return Index{}, fmt.Errorf("repository %q: %w", r.Name, err)
 	}
 	path := filepath.Join(dst, "packages.json")

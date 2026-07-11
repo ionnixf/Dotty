@@ -1,124 +1,195 @@
 [
   {
     "name": "fastfetch",
-    "repo": "https://github.com/fastfetch-cli/fastfetch",
-    "source": "presets/examples/7",
     "target": "~/.config/fastfetch",
     "description": "Fastfetch system-information tool — example config preset",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/fastfetch-cli/fastfetch",
+        "source": "presets/examples/7",
+        "description": "Fastfetch system-information tool — example config preset"
+      }
+    ]
   },
   {
     "name": "fish",
-    "repo": "https://github.com/placeholder/dotty-fish",
     "target": "~/.config/fish",
     "description": "Fish shell configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-fish",
+        "description": "Fish shell configuration"
+      }
+    ]
   },
   {
     "name": "foot",
-    "repo": "https://github.com/placeholder/dotty-foot",
     "target": "~/.config/foot",
     "description": "Foot terminal emulator configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-foot",
+        "description": "Foot terminal emulator configuration"
+      }
+    ]
   },
   {
     "name": "hyprland",
     "target": "~/.config/hypr",
     "description": "Hyprland Wayland compositor configurations",
-    "placeholder": false,
-    "alternatives": [
+    "configs": [
       {
         "name": "hyprlua-btw",
         "repo": "https://github.com/tonybanters/hyprlua-btw",
         "source": "hypr",
-        "description": "Lua-based configuration (hyprlua-btw) (VERIFIED)"
+        "description": "Lua-based configuration (hyprlua-btw) (VERIFIED)",
+        "status": "verified"
       },
       {
         "name": "official-example",
         "repo": "https://github.com/hyprwm/hyprland",
         "source": "example",
-        "description": "Official minimal configuration example (PLACEHOLDER)"
+        "description": "Official minimal configuration example (PLACEHOLDER)",
+        "status": "placeholder"
+      }
+    ],
+    "status": "verified"
+  },
+  {
+    "name": "kitty",
+    "target": "~/.config/kitty",
+    "description": "Kitty terminal emulator configuration",
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-kitty",
+        "description": "Kitty terminal emulator configuration"
       }
     ]
   },
   {
-    "name": "kitty",
-    "repo": "https://github.com/placeholder/dotty-kitty",
-    "target": "~/.config/kitty",
-    "description": "Kitty terminal emulator configuration",
-    "placeholder": true
-  },
-  {
     "name": "mako",
-    "repo": "https://github.com/placeholder/dotty-mako",
     "target": "~/.config/mako",
     "description": "Mako notification daemon configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-mako",
+        "description": "Mako notification daemon configuration"
+      }
+    ]
   },
   {
     "name": "neovim",
     "target": "~/.config/nvim",
     "description": "Popular Neovim configurations",
-    "placeholder": false,
-    "alternatives": [
+    "configs": [
       {
         "name": "lazyvim",
         "repo": "https://github.com/LazyVim/starter",
-        "description": "LazyVim starter configuration"
+        "description": "LazyVim starter configuration",
+        "status": "verified"
       },
       {
         "name": "nvchad",
         "repo": "https://github.com/NvChad/starter",
-        "description": "NvChad starter configuration"
+        "description": "NvChad starter configuration",
+        "status": "verified"
       },
       {
         "name": "astronvim",
         "repo": "https://github.com/AstroNvim/template",
-        "description": "AstroNvim template configuration"
+        "description": "AstroNvim template configuration",
+        "status": "verified"
+      }
+    ],
+    "status": "verified"
+  },
+  {
+    "name": "starship",
+    "target": "~/.config/starship",
+    "description": "Starship prompt configuration",
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-starship",
+        "description": "Starship prompt configuration"
       }
     ]
   },
   {
-    "name": "starship",
-    "repo": "https://github.com/placeholder/dotty-starship",
-    "target": "~/.config/starship",
-    "description": "Starship prompt configuration",
-    "placeholder": true
-  },
-  {
     "name": "tmux",
-    "repo": "https://github.com/placeholder/dotty-tmux",
     "target": "~/.config/tmux",
     "description": "Tmux terminal multiplexer configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-tmux",
+        "description": "Tmux terminal multiplexer configuration"
+      }
+    ]
   },
   {
     "name": "waybar",
-    "repo": "https://github.com/Alexays/Waybar",
-    "source": "resources",
     "target": "~/.config/waybar",
     "description": "Waybar status bar — sample configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/Alexays/Waybar",
+        "source": "resources",
+        "description": "Waybar status bar — sample configuration"
+      }
+    ]
   },
   {
     "name": "wezterm",
-    "repo": "https://github.com/placeholder/dotty-wezterm",
     "target": "~/.config/wezterm",
     "description": "WezTerm terminal emulator configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-wezterm",
+        "description": "WezTerm terminal emulator configuration"
+      }
+    ]
   },
   {
     "name": "wofi",
-    "repo": "https://github.com/placeholder/dotty-wofi",
     "target": "~/.config/wofi",
     "description": "Wofi application launcher configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-wofi",
+        "description": "Wofi application launcher configuration"
+      }
+    ]
   },
   {
     "name": "zsh",
-    "repo": "https://github.com/placeholder/dotty-zsh",
     "target": "~/.config/zsh",
     "description": "Zsh shell configuration",
-    "placeholder": true
+    "status": "placeholder",
+    "configs": [
+      {
+        "name": "default",
+        "repo": "https://github.com/placeholder/dotty-zsh",
+        "description": "Zsh shell configuration"
+      }
+    ]
   }
 ]

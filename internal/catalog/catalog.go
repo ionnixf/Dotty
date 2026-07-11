@@ -12,14 +12,20 @@ import (
 	"github.com/ion/dotty/pkg/configs"
 )
 
-// ConfigAlternative represents one alternative repository/configuration source
-// for a package target.
-type ConfigAlternative struct {
+// Configuration is one installable configuration for an application.
+// Status is "verified" or "placeholder"; placeholders remain documented in
+// the index but are never offered for installation.
+type Configuration struct {
 	Name        string `json:"name"`
 	Repo        string `json:"repo"`
 	Source      string `json:"source,omitempty"`
 	Description string `json:"description,omitempty"`
+	Status      string `json:"status,omitempty"`
 }
+
+// ConfigAlternative is retained for decoding legacy catalogs. New catalogs use
+// configs, and parse normalises alternatives into Configurations.
+type ConfigAlternative = Configuration
 
 // Package is one installable entry in the catalog.
 //
@@ -37,6 +43,20 @@ type Package struct {
 	Target       string              `json:"target"`
 	Description  string              `json:"description,omitempty"`
 	Alternatives []ConfigAlternative `json:"alternatives,omitempty"`
+	Configs      []Configuration     `json:"configs,omitempty"`
+	Status       string              `json:"status,omitempty"`
+	Placeholder  bool                `json:"placeholder,omitempty"`
+}
+
+// AvailableConfigs returns the verified configurations for this application.
+func (p Package) AvailableConfigs() []Configuration {
+	configs := make([]Configuration, 0, len(p.Configs))
+	for _, c := range p.Configs {
+		if c.Status != "placeholder" {
+			configs = append(configs, c)
+		}
+	}
+	return configs
 }
 
 // Load returns the effective catalog: the user override if present, otherwise
@@ -80,26 +100,63 @@ func parse(raw []byte) ([]Package, error) {
 		if p.Target == "" {
 			return nil, fmt.Errorf("package %q: empty target", p.Name)
 		}
-		if p.Repo == "" && len(p.Alternatives) == 0 {
-			return nil, fmt.Errorf("package %q: empty repo and no alternatives", p.Name)
-		}
-		for j, alt := range p.Alternatives {
-			if alt.Name == "" {
-				return nil, fmt.Errorf("package %q alternative at index %d: empty name", p.Name, j)
-			}
-			if alt.Repo == "" {
-				return nil, fmt.Errorf("package %q alternative %q: empty repo", p.Name, alt.Name)
-			}
+		if err := normaliseConfigs(&p); err != nil {
+			return nil, fmt.Errorf("package %q: %w", p.Name, err)
 		}
 		if seen[p.Name] {
 			return nil, fmt.Errorf("duplicate package name %q", p.Name)
 		}
 		seen[p.Name] = true
+		pkgs[i] = p
 	}
 	if pkgs == nil {
 		pkgs = []Package{}
 	}
 	return pkgs, nil
+}
+
+func normaliseConfigs(p *Package) error {
+	if p.Placeholder && p.Status == "" {
+		p.Status = "placeholder"
+	}
+	if p.Status == "" {
+		p.Status = "verified"
+	}
+	if p.Status != "verified" && p.Status != "placeholder" {
+		return fmt.Errorf("unknown status %q", p.Status)
+	}
+	if len(p.Configs) == 0 {
+		if p.Repo != "" {
+			p.Configs = append(p.Configs, Configuration{
+				Name: "default", Repo: p.Repo, Source: p.Source, Description: p.Description, Status: p.Status,
+			})
+		}
+		p.Configs = append(p.Configs, p.Alternatives...)
+	}
+	if len(p.Configs) == 0 {
+		return fmt.Errorf("no configurations")
+	}
+	seen := make(map[string]bool, len(p.Configs))
+	for i := range p.Configs {
+		c := &p.Configs[i]
+		if c.Name == "" {
+			return fmt.Errorf("configuration at index %d: empty name", i)
+		}
+		if c.Repo == "" {
+			return fmt.Errorf("configuration %q: empty repo", c.Name)
+		}
+		if c.Status == "" {
+			c.Status = p.Status
+		}
+		if c.Status != "verified" && c.Status != "placeholder" {
+			return fmt.Errorf("configuration %q: unknown status %q", c.Name, c.Status)
+		}
+		if seen[c.Name] {
+			return fmt.Errorf("duplicate configuration name %q", c.Name)
+		}
+		seen[c.Name] = true
+	}
+	return nil
 }
 
 // Sorted returns pkgs sorted by name. Exported for the repository layer.

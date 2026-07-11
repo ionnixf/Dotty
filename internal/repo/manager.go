@@ -14,6 +14,10 @@ import (
 // the embedded catalog. It is created on first load and never auto-removed.
 const OfficialRepoName = "official"
 
+// OfficialRepoURL is the canonical, community-maintained catalog. The
+// embedded catalog remains a bootstrap fallback when it is unavailable.
+const OfficialRepoURL = "https://github.com/ionnixf/dotty-repos.git"
+
 // registry is the on-disk shape of the repositories file.
 type registry struct {
 	Repositories []Repository `json:"repositories"`
@@ -93,15 +97,19 @@ func (m *Manager) save() error {
 // seedOfficial ensures the embedded-catalog repository is present, once. It is
 // marked with the sentinel URL so Fetch can short-circuit cloning.
 func (m *Manager) seedOfficial() {
-	for _, r := range m.repo {
+	for i, r := range m.repo {
 		if r.Name == OfficialRepoName {
+			if r.Kind == KindEmbedded || r.URL != OfficialRepoURL {
+				m.repo[i] = Repository{Name: OfficialRepoName, URL: OfficialRepoURL, Kind: KindGit}
+				_ = m.save()
+			}
 			return
 		}
 	}
 	m.repo = append(m.repo, Repository{
 		Name: OfficialRepoName,
-		URL:  SentinelEmbedded,
-		Kind: KindEmbedded,
+		URL:  OfficialRepoURL,
+		Kind: KindGit,
 	})
 	// Best-effort persist; a failure here leaves the in-memory seed intact and
 	// is retried on the next Add/Remove.

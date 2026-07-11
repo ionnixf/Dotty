@@ -6,6 +6,7 @@ import (
 
 	"github.com/ion/dotty/internal/config"
 	"github.com/ion/dotty/internal/git"
+	"github.com/ion/dotty/internal/installer"
 	"github.com/ion/dotty/internal/storage"
 )
 
@@ -40,7 +41,7 @@ func (u *Updater) Update(name string) Outcome {
 	if rec.Repo == storage.ImportedRepoTag {
 		return Outcome{Name: name, Output: "local imported configuration; skipping update"}
 	}
-	repoDir, err := config.SafeJoin(u.paths.RepoDir, rec.Name)
+	repoDir, err := installer.ConfigRepoDir(u.paths.RepoDir, rec.Name, rec.Config)
 	if err != nil {
 		return Outcome{Name: name, Err: fmt.Errorf("invalid package repository path: %w", err)}
 	}
@@ -61,7 +62,7 @@ func (u *Updater) UpdateAll() ([]Outcome, error) {
 			results = append(results, Outcome{Name: rec.Name, Output: "local imported configuration; skipping update"})
 			continue
 		}
-		repoDir, err := config.SafeJoin(u.paths.RepoDir, rec.Name)
+		repoDir, err := installer.ConfigRepoDir(u.paths.RepoDir, rec.Name, rec.Config)
 		if err != nil {
 			results = append(results, Outcome{Name: rec.Name, Err: fmt.Errorf("invalid package repository path: %w", err)})
 			continue

@@ -98,7 +98,7 @@ func (s *Syncer) inspect(rec storage.Record) (Problem, bool) {
 	}
 
 	// Symlink is healthy; verify the backing repo still exists.
-	repoDir, err := config.SafeJoin(s.paths.RepoDir, rec.Name)
+	repoDir, err := installer.ConfigRepoDir(s.paths.RepoDir, rec.Name, rec.Config)
 	if err != nil {
 		return Problem{Record: rec, Kind: ProblemMissingRepo, Detail: fmt.Sprintf("invalid repo name %q: %v", rec.Name, err)}, true
 	}
@@ -135,7 +135,7 @@ func (s *Syncer) Repair(rec storage.Record) error {
 	if err != nil {
 		return fmt.Errorf("resolve target %q: %w", rec.Target, err)
 	}
-	repoDir, err := config.SafeJoin(s.paths.RepoDir, rec.Name)
+	repoDir, err := installer.ConfigRepoDir(s.paths.RepoDir, rec.Name, rec.Config)
 	if err != nil {
 		return fmt.Errorf("invalid repo name %q: %w", rec.Name, err)
 	}

@@ -62,7 +62,13 @@ func (r *Resolver) fetchIndex(rep Repository) (Index, error) {
 	if rep.Kind == KindEmbedded {
 		return r.officialIndex()
 	}
-	return rep.Fetch(r.git, r.paths.RepoCacheDir())
+	idx, err := rep.Fetch(r.git, r.paths.RepoCacheDir())
+	if err != nil && rep.Name == OfficialRepoName {
+		// First launch and offline operation remain possible without a cloned
+		// official catalog.
+		return r.officialIndex()
+	}
+	return idx, err
 }
 
 // Merge builds the unified index: every repository's packages, in registration

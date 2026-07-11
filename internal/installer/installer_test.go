@@ -240,6 +240,24 @@ func TestInstallerRollback(t *testing.T) {
 	}
 }
 
+func TestConfigRepoDirSeparatesConfigurations(t *testing.T) {
+	base := t.TempDir()
+	first, err := ConfigRepoDir(base, "neovim", "lazyvim")
+	if err != nil {
+		t.Fatalf("ConfigRepoDir lazyvim: %v", err)
+	}
+	second, err := ConfigRepoDir(base, "neovim", "nvchad")
+	if err != nil {
+		t.Fatalf("ConfigRepoDir nvchad: %v", err)
+	}
+	if first == second {
+		t.Fatalf("configuration clones must use distinct paths: %q", first)
+	}
+	if _, err := ConfigRepoDir(base, "../neovim", "lazyvim"); err == nil {
+		t.Fatal("expected path traversal to be rejected")
+	}
+}
+
 // Simple helper to mimic LinkSource for tests without error handling
 func LinkSourceOnly(repoDir, source string) string {
 	if source == "" {

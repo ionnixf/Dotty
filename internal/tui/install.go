@@ -31,42 +31,42 @@ func (i installItem) Render() string {
 	return fmt.Sprintf("%s%s", mark, name)
 }
 
-// altItem is one configuration choice in the alternatives list.
-type altItem struct {
-	alt catalog.ConfigAlternative
+// configItem is one configuration choice for an application.
+type configItem struct {
+	config catalog.Configuration
 }
 
-func (a altItem) Render() string {
-	if a.alt.Description != "" {
-		return fmt.Sprintf("%-18s %s", a.alt.Name, a.alt.Description)
+func (c configItem) Render() string {
+	if c.config.Description != "" {
+		return fmt.Sprintf("%-18s %s", c.config.Name, c.config.Description)
 	}
-	return a.alt.Name
+	return c.config.Name
 }
 
 // installScreen lists installable packages and runs installs.
 type installScreen struct {
-	deps                *deps
-	list                *list
-	sp                  spinner.Model
-	spinning            bool
-	status              string // transient message shown above the footer
-	err                 error
-	pkgs                []catalog.Package
-	showingAlternatives bool
-	selectedPkg         catalog.Package
-	alternativesList     *list
+	deps           *deps
+	list           *list
+	sp             spinner.Model
+	spinning       bool
+	status         string // transient message shown above the footer
+	err            error
+	pkgs           []catalog.Package
+	showingConfigs bool
+	selectedPkg    catalog.Package
+	configsList    *list
 }
 
 func newInstallScreen(d *deps) *installScreen {
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
 	l := newList("Install", d.theme)
-	altL := newList("Select Configuration", d.theme)
-	return &installScreen{deps: d, list: l, sp: sp, alternativesList: altL}
+	configL := newList("Select Configuration", d.theme)
+	return &installScreen{deps: d, list: l, sp: sp, configsList: configL}
 }
 
 func (s *installScreen) title() string { return "Install" }
 func (s *installScreen) help() string {
-	if s.showingAlternatives {
+	if s.showingConfigs {
 		return "↑↓ navigate · enter select · esc back"
 	}
 	return "↑↓ navigate · enter install · esc back"
@@ -75,15 +75,15 @@ func (s *installScreen) help() string {
 // enter reloads the catalog and the installed set so the screen reflects the
 // current state each time it becomes active.
 func (s *installScreen) enter() {
-	s.showingAlternatives = false
+	s.showingConfigs = false
 	s.err = s.load()
 }
 
 func (s *installScreen) setSize(w, h int) {
 	s.list.setWidth(w)
 	s.list.setHeight(h - 6)
-	s.alternativesList.setWidth(w)
-	s.alternativesList.setHeight(h - 6)
+	s.configsList.setWidth(w)
+	s.configsList.setHeight(h - 6)
 }
 
 // load fetches catalog + installed records and rebuilds the list items.
@@ -116,31 +116,32 @@ func (s *installScreen) load() error {
 func (s *installScreen) Init() tea.Cmd { return nil }
 
 func (s *installScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if s.showingAlternatives {
+	if s.showingConfigs {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch keyID(msg) {
 			case "esc", "q":
-				s.showingAlternatives = false
+				s.showingConfigs = false
 				return s, nil
 			case "enter":
-				if s.alternativesList.selected() == nil {
+				if s.configsList.selected() == nil {
 					return s, nil
 				}
-				alt := s.alternativesList.selected().(altItem).alt
-				s.showingAlternatives = false
-				s.status = "Installing " + s.selectedPkg.Name + " (" + alt.Name + ") ..."
+				selected := s.configsList.selected().(configItem).config
+				s.showingConfigs = false
+				s.status = "Installing " + s.selectedPkg.Name + " (" + selected.Name + ") ..."
 				s.err = nil
 				s.spinning = true
 				req := installer.Request{
 					Name:   s.selectedPkg.Name,
-					Repo:   alt.Repo,
-					Source: alt.Source,
+					Config: selected.Name,
+					Repo:   selected.Repo,
+					Source: selected.Source,
 					Target: s.selectedPkg.Target,
 				}
 				return s, tea.Batch(s.sp.Tick, s.runInstall(req))
 			}
-			if s.alternativesList.handleKey(msg) {
+			if s.configsList.handleKey(msg) {
 				return s, nil
 			}
 		}
@@ -162,29 +163,21 @@ func (s *installScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return s, nil
 			}
 			it := s.list.selected().(installItem)
-			if len(it.pkg.Alternatives) > 0 {
-				s.showingAlternatives = true
-				s.selectedPkg = it.pkg
-				s.alternativesList.title = "Select Configuration for " + it.pkg.Name
-				items := make([]listItem, len(it.pkg.Alternatives))
-				for idx, alt := range it.pkg.Alternatives {
-					items[idx] = altItem{alt: alt}
-				}
-				s.alternativesList.setItems(items)
-				s.alternativesList.cursor = 0
+			configs := it.pkg.AvailableConfigs()
+			if len(configs) == 0 {
+				s.err = fmt.Errorf("%s has no verified configurations", it.pkg.Name)
 				return s, nil
 			}
-
-			s.status = "Installing " + it.pkg.Name + " ..."
-			s.err = nil
-			s.spinning = true
-			req := installer.Request{
-				Name:   it.pkg.Name,
-				Repo:   it.pkg.Repo,
-				Source: it.pkg.Source,
-				Target: it.pkg.Target,
+			s.showingConfigs = true
+			s.selectedPkg = it.pkg
+			s.configsList.title = "Select Configuration for " + it.pkg.Name
+			items := make([]listItem, len(configs))
+			for idx, config := range configs {
+				items[idx] = configItem{config: config}
 			}
-			return s, tea.Batch(s.sp.Tick, s.runInstall(req))
+			s.configsList.setItems(items)
+			s.configsList.cursor = 0
+			return s, nil
 		}
 		if s.list.handleKey(msg) {
 			return s, nil
@@ -240,8 +233,8 @@ func (s *installScreen) runInstall(req installer.Request) tea.Cmd {
 
 func (s *installScreen) View() string {
 	var body string
-	if s.showingAlternatives {
-		body = s.alternativesList.render()
+	if s.showingConfigs {
+		body = s.configsList.render()
 	} else {
 		body = s.list.render()
 	}

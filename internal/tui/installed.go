@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ion/dotty/internal/catalog"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -30,11 +28,11 @@ func newInstalledScreen(d *deps) *installedScreen {
 	return &installedScreen{deps: d}
 }
 
-func (s *installedScreen) title() string { return "Installed" }
-func (s *installedScreen) help() string  { return "↑↓ navigate · esc back" }
-func (s *installedScreen) enter()        { s.err = s.load() }
+func (s *installedScreen) title() string    { return "Installed" }
+func (s *installedScreen) help() string     { return "↑↓ navigate · esc back" }
+func (s *installedScreen) enter()           { s.err = s.load() }
 func (s *installedScreen) setSize(w, h int) {}
-func (s *installedScreen) Init() tea.Cmd { return nil }
+func (s *installedScreen) Init() tea.Cmd    { return nil }
 
 // load reads the installed database and computes each row's live status by
 // checking the symlink on disk.
@@ -44,23 +42,12 @@ func (s *installedScreen) load() error {
 		s.rows = nil
 		return err
 	}
-	pkgs, _ := s.deps.reloadCatalog()
-	pkgMap := make(map[string]catalog.Package)
-	for _, p := range pkgs {
-		pkgMap[p.Name] = p
-	}
-
 	rows := make([]installedRow, 0, len(records))
 	for _, r := range records {
 		status := liveStatus(s.deps, r)
 		name := r.Name
-		if p, ok := pkgMap[r.Name]; ok && len(p.Alternatives) > 0 {
-			for _, alt := range p.Alternatives {
-				if normalizeURL(alt.Repo) == normalizeURL(r.Repo) {
-					name = fmt.Sprintf("%s (%s)", r.Name, alt.Name)
-					break
-				}
-			}
+		if r.Config != "" {
+			name = fmt.Sprintf("%s (%s)", r.Name, r.Config)
 		}
 		rows = append(rows, installedRow{
 			name:   name,
@@ -73,13 +60,6 @@ func (s *installedScreen) load() error {
 		s.cursor = max(0, len(s.rows)-1)
 	}
 	return nil
-}
-
-func normalizeURL(s string) string {
-	s = strings.TrimSpace(s)
-	s = strings.TrimSuffix(s, "/")
-	s = strings.TrimSuffix(s, ".git")
-	return strings.ToLower(s)
 }
 
 func (s *installedScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

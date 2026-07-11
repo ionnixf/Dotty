@@ -35,7 +35,8 @@ func New(g *git.Client, store *storage.Store, paths config.Paths, home string) *
 
 // Request captures the inputs for one install operation.
 type Request struct {
-	Name   string
+	Name   string // application identifier
+	Config string // configuration identifier within the application
 	Repo   string
 	Source string // directory inside the repo to link from
 	Target string // destination path (may contain "~")
@@ -64,7 +65,7 @@ func (i *Installer) Install(req Request) (Result, error) {
 		return Result{}, errors.New("empty repo URL")
 	}
 
-	repoDir, err := config.SafeJoin(i.paths.RepoDir, req.Name)
+	repoDir, err := ConfigRepoDir(i.paths.RepoDir, req.Name, req.Config)
 	if err != nil {
 		return Result{}, fmt.Errorf("invalid package name: %w", err)
 	}
@@ -77,15 +78,26 @@ func (i *Installer) Install(req Request) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
+	replaceTarget, err := i.canReplaceManagedTarget(req.Name, target, source)
+	if err != nil {
+		return Result{}, err
+	}
 	// Check the destination before changing the cached repository. A failed
 	// install must not replace a working repository just to discover that its
 	// target belongs to a different configuration.
-	if err := checkTarget(source, target); err != nil {
-		return Result{}, err
+	if !replaceTarget {
+		if err := checkTarget(source, target); err != nil {
+			return Result{}, err
+		}
 	}
 
 	if err := i.ensureRepo(req.Repo, repoDir); err != nil {
 		return Result{}, err
+	}
+	if replaceTarget {
+		if err := os.Remove(target); err != nil {
+			return Result{}, fmt.Errorf("replace managed symlink %s: %w", target, err)
+		}
 	}
 	created, err := i.link(source, target)
 	if err != nil {
@@ -94,6 +106,7 @@ func (i *Installer) Install(req Request) (Result, error) {
 
 	rec := storage.Record{
 		Name:   req.Name,
+		Config: req.Config,
 		Repo:   req.Repo,
 		Source: req.Source,
 		Target: req.Target,
@@ -112,6 +125,49 @@ func (i *Installer) Install(req Request) (Result, error) {
 		Target:  target,
 		RepoDir: repoDir,
 	}, nil
+}
+
+// canReplaceManagedTarget permits a configuration switch only when target is
+// still the symlink created for the application's current recorded config.
+func (i *Installer) canReplaceManagedTarget(application, target, nextSource string) (bool, error) {
+	rec, ok, err := i.store.Find(application)
+	if err != nil || !ok {
+		return false, err
+	}
+	previousTarget, err := config.ExpandInHome(rec.Target, i.home)
+	if err != nil || previousTarget != target {
+		return false, nil
+	}
+	previousRepo, err := ConfigRepoDir(i.paths.RepoDir, rec.Name, rec.Config)
+	if err != nil {
+		return false, err
+	}
+	previousSource, err := LinkSource(previousRepo, rec.Source)
+	if err != nil {
+		return false, err
+	}
+	if previousSource == nextSource {
+		return false, nil
+	}
+	actual, err := os.Readlink(target)
+	if err != nil || actual != previousSource {
+		return false, nil
+	}
+	return true, nil
+}
+
+// ConfigRepoDir returns the private clone directory for one configuration.
+// An empty configuration is the legacy one-clone-per-application layout.
+func ConfigRepoDir(base, application, configuration string) (string, error) {
+	appDir, err := config.SafeJoin(base, application)
+	if err != nil {
+		return "", err
+	}
+	if configuration == "" {
+		// Legacy records used one clone per application.
+		return appDir, nil
+	}
+	return config.SafeJoin(appDir, configuration)
 }
 
 // LinkSource returns the absolute path within repoDir that should be linked

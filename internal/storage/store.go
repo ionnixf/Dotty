@@ -21,6 +21,7 @@ const ImportedRepoTag = "imported:existing"
 // it in the catalog (commonly with a leading "~") so the file remains readable.
 type Record struct {
 	Name        string    `json:"name"`
+	Config      string    `json:"config,omitempty"`
 	Repo        string    `json:"repo"`
 	Source      string    `json:"source"`
 	Target      string    `json:"target"`

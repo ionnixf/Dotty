@@ -15,7 +15,11 @@ import (
 type removeItem struct{ rec storage.Record }
 
 func (i removeItem) Render() string {
-	return fmt.Sprintf("%-14s %s", i.rec.Name, i.rec.Target)
+	name := i.rec.Name
+	if i.rec.Config != "" {
+		name += " (" + i.rec.Config + ")"
+	}
+	return fmt.Sprintf("%-22s %s", name, i.rec.Target)
 }
 
 // removeScreen lists installed packages and removes the selection after a
